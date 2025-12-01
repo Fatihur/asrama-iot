@@ -146,6 +146,35 @@
                 <p class="text-xs text-gray-400 mt-1">image (file) atau image_url</p>
             </div>
         </div>
+        
+        <!-- ESP32 Code Example -->
+        <details class="mt-4">
+            <summary class="cursor-pointer text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                <i class="fas fa-code mr-1"></i> Contoh Kode ESP32-CAM
+            </summary>
+            <div class="mt-2 bg-gray-800 rounded-lg p-4 text-xs overflow-x-auto">
+                <pre class="text-green-400"><code>// ESP32-CAM Upload Image
+const char* serverUrl = "https://{{ request()->getHost() }}/api/capture";
+
+HTTPClient http;
+http.begin(serverUrl);
+http.addHeader("Content-Type", "image/jpeg");
+http.addHeader("X-Device-ID", "ESP32-CAM-001");
+http.addHeader("X-Floor", "1");
+
+// Capture and send image
+camera_fb_t *fb = esp_camera_fb_get();
+int httpCode = http.POST(fb->buf, fb->len);
+
+if (httpCode == 201) {
+    Serial.println("Upload success!");
+} else {
+    Serial.println("Upload failed: " + String(httpCode));
+}
+esp_camera_fb_return(fb);
+http.end();</code></pre>
+            </div>
+        </details>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

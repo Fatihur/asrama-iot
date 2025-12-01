@@ -66,32 +66,57 @@ class KameraController extends Controller
 
     public function store(Request $request)
     {
+        // Flexible validation untuk ESP32-CAM
         $validated = $request->validate([
-            'device_id' => 'required|string|max:50',
-            'floor' => 'required|integer|min:1',
+            'device_id' => 'nullable|string|max:50',
+            'floor' => 'nullable|integer|min:1',
             'lokasi' => 'nullable|string|max:100',
-            'image_url' => 'required_without:image|url|max:500',
-            'image' => 'required_without:image_url|image|max:5120',
+            'image_url' => 'nullable|url|max:500',
+            'image' => 'nullable|max:5120',
+            'imageFile' => 'nullable|max:5120',
             'riwayat_id' => 'nullable|exists:riwayat,id',
             'type' => 'nullable|in:SCHEDULED,EVENT,MANUAL',
         ]);
 
         $imageUrl = $validated['image_url'] ?? null;
+        $imagePath = null;
 
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('kamera', 'public');
+        // Handle file upload dari form-data (image atau imageFile)
+        $imageFile = $request->file('image') ?? $request->file('imageFile');
+        if ($imageFile) {
+            $filename = 'esp32_' . date('Ymd_His') . '_' . uniqid() . '.' . ($imageFile->getClientOriginalExtension() ?: 'jpg');
+            $path = $imageFile->storeAs('kamera', $filename, 'public');
             $imageUrl = Storage::url($path);
-            $validated['image_path'] = $path;
+            $imagePath = $path;
+        }
+        
+        // Handle raw binary image dari ESP32-CAM
+        if (!$imageFile && !$imageUrl && $request->getContent()) {
+            $content = $request->getContent();
+            // Check if it's image data (starts with JPEG magic bytes or has significant size)
+            if (strlen($content) > 100) {
+                $filename = 'esp32_' . date('Ymd_His') . '_' . uniqid() . '.jpg';
+                Storage::disk('public')->put('kamera/' . $filename, $content);
+                $imagePath = 'kamera/' . $filename;
+                $imageUrl = Storage::url($imagePath);
+            }
+        }
+
+        if (!$imageUrl) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No image provided',
+            ], 400);
         }
 
         $kamera = Kamera::create([
-            'device_id' => $validated['device_id'],
-            'floor' => $validated['floor'],
+            'device_id' => $validated['device_id'] ?? $request->header('X-Device-ID', 'ESP32-CAM'),
+            'floor' => $validated['floor'] ?? $request->header('X-Floor', 1),
             'lokasi' => $validated['lokasi'] ?? null,
             'image_url' => $imageUrl,
-            'image_path' => $validated['image_path'] ?? null,
+            'image_path' => $imagePath,
             'riwayat_id' => $validated['riwayat_id'] ?? null,
-            'type' => $validated['type'] ?? 'SCHEDULED',
+            'type' => $validated['type'] ?? 'EVENT',
             'captured_at' => now(),
         ]);
 

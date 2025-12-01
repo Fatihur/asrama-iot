@@ -84,3 +84,18 @@ Route::get('/health', function () {
         'app' => config('app.name'),
     ]);
 });
+
+// Test endpoint untuk ESP32
+Route::match(['get', 'post'], '/test', function () {
+    return response()->json([
+        'status' => 'ok',
+        'message' => 'API is working',
+        'method' => request()->method(),
+        'timestamp' => now()->toIso8601String(),
+    ]);
+});
+
+// Ping endpoint (simple)
+Route::get('/ping', function () {
+    return response('pong', 200)->header('Content-Type', 'text/plain');
+});
