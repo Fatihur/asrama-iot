@@ -50,8 +50,8 @@
             <h4 class="text-sm font-medium text-gray-700 mb-2">Keterangan Mode:</h4>
             <ul class="text-sm text-gray-600 space-y-1">
                 <li><strong class="text-red-600">ON:</strong> Sirine aktif terus menerus</li>
-                <li><strong class="text-gray-600">OFF:</strong> Sirine mati, tidak akan berbunyi meskipun ada kejadian darurat</li>
-                <li><strong class="text-blue-600">AUTO:</strong> Sirine otomatis aktif saat terdeteksi SMOKE atau SOS</li>
+                <li><strong class="text-gray-600">OFF:</strong> Sirine mati, tidak akan berbunyi meskipun ada kejadian kebakaran</li>
+                <li><strong class="text-blue-600">AUTO:</strong> Sirine otomatis aktif saat terdeteksi SMOKE, FIRE, atau FIRE ALARM</li>
             </ul>
         </div>
     </div>

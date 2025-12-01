@@ -20,7 +20,7 @@
             <dd class="mt-1 text-3xl font-semibold tracking-tight text-yellow-700" x-text="pendingCount">{{ $stats['pending_events'] }}</dd>
         </div>
         <div class="overflow-hidden rounded-lg bg-red-50 px-4 py-5 shadow sm:p-6 border-l-4 border-red-400">
-            <dt class="truncate text-sm font-medium text-red-700">Darurat Hari Ini</dt>
+            <dt class="truncate text-sm font-medium text-red-700">Kebakaran Hari Ini</dt>
             <dd class="mt-1 text-3xl font-semibold tracking-tight text-red-700">{{ $stats['emergency_today'] }}</dd>
         </div>
     </div>
@@ -133,7 +133,7 @@
             <div class="bg-gray-50 rounded p-3">
                 <code class="text-indigo-600 font-medium">POST /api/event</code>
                 <p class="text-gray-500 mt-1">Kirim event umum</p>
-                <p class="text-xs text-gray-400 mt-1">event_type: SMOKE, FLAME, SOS</p>
+                <p class="text-xs text-gray-400 mt-1">event_type: SMOKE, FIRE, FIRE ALARM</p>
             </div>
             <div class="bg-gray-50 rounded p-3">
                 <code class="text-indigo-600 font-medium">GET /api/sirine</code>

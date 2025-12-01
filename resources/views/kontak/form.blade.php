@@ -86,12 +86,12 @@
                 <div class="flex items-center">
                     <input type="checkbox" name="notify_smoke" value="1" id="notify_smoke" {{ old('notify_smoke', $kontak->notify_smoke ?? true) ? 'checked' : '' }}
                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <label for="notify_smoke" class="ml-2 text-sm text-gray-700">Notifikasi Smoke/Kebakaran</label>
+                    <label for="notify_smoke" class="ml-2 text-sm text-gray-700">Notifikasi Smoke (Asap)</label>
                 </div>
                 <div class="flex items-center">
                     <input type="checkbox" name="notify_sos" value="1" id="notify_sos" {{ old('notify_sos', $kontak->notify_sos ?? true) ? 'checked' : '' }}
                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <label for="notify_sos" class="ml-2 text-sm text-gray-700">Notifikasi SOS/Darurat</label>
+                    <label for="notify_sos" class="ml-2 text-sm text-gray-700">Notifikasi Flame (Api)</label>
                 </div>
             </div>
         </div>

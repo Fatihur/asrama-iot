@@ -22,9 +22,13 @@
                     <dt class="text-sm font-medium text-gray-500">Jenis Kejadian</dt>
                     <dd class="mt-1">
                         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
-                            {{ $riwayat->event_type === 'SMOKE' ? 'bg-red-100 text-red-800' : '' }}
-                            {{ $riwayat->event_type === 'SOS' ? 'bg-orange-100 text-orange-800' : '' }}
-                            {{ !in_array($riwayat->event_type, ['SMOKE', 'SOS']) ? 'bg-gray-100 text-gray-800' : '' }}">
+                            {{ $riwayat->event_type === 'SMOKE' ? 'bg-gray-200 text-gray-800' : '' }}
+                            {{ $riwayat->event_type === 'FIRE' ? 'bg-orange-100 text-orange-800' : '' }}
+                            {{ $riwayat->event_type === 'FIRE ALARM' ? 'bg-red-100 text-red-800' : '' }}
+                            {{ !in_array($riwayat->event_type, ['SMOKE', 'FIRE', 'FIRE ALARM']) ? 'bg-gray-100 text-gray-800' : '' }}">
+                            @if($riwayat->event_type === 'SMOKE')<i class="fas fa-smog mr-1"></i>@endif
+                            @if($riwayat->event_type === 'FIRE')<i class="fas fa-fire mr-1"></i>@endif
+                            @if($riwayat->event_type === 'FIRE ALARM')<i class="fas fa-bell mr-1"></i>@endif
                             {{ $riwayat->event_type }}
                         </span>
                     </dd>

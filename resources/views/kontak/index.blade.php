@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Kontak Darurat')
-@section('header', 'Kontak Darurat')
+@section('title', 'Notifikasi Flame')
+@section('header', 'Notifikasi Flame')
 
 @section('content')
 <div class="mb-4 flex justify-between items-center">
-    <p class="text-sm text-gray-600">Daftar kontak yang akan dihubungi saat terjadi kejadian darurat</p>
+    <p class="text-sm text-gray-600">Daftar kontak yang akan dihubungi saat terjadi kejadian kebakaran</p>
     <a href="{{ route('kontak.create') }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
         <i class="fas fa-plus mr-1"></i> Tambah Kontak
     </a>
@@ -62,7 +62,7 @@
                         @endif
                         @if($kontak->notify_sos)
                         <span class="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">
-                            <i class="fas fa-exclamation mr-1"></i>SOS
+                            <i class="fas fa-fire mr-1"></i>Flame
                         </span>
                         @endif
                     </div>

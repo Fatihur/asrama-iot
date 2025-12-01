@@ -39,8 +39,8 @@
                 <li>
                     <a href="{{ route('kontak.index') }}" 
                        class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 {{ request()->routeIs('kontak.*') ? 'bg-indigo-700 text-white' : 'text-indigo-200 hover:bg-indigo-700 hover:text-white' }}">
-                        <i class="fas fa-address-book w-6 text-center"></i>
-                        Kontak Darurat
+                        <i class="fas fa-fire w-6 text-center"></i>
+                        Notifikasi Flame
                     </a>
                 </li>
                 <li>
