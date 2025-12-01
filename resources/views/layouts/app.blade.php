@@ -200,7 +200,7 @@
                         const data = JSON.parse(e.data);
                         if (data.latest && data.latest.id > this.lastEventId) {
                             const event = data.latest;
-                            const emergencyTypes = ['SMOKE', 'FIRE', 'FIRE ALARM'];
+                            const emergencyTypes = ['SMOKE', 'FLAME', 'FIRE', 'FIRE ALARM'];
                             if (emergencyTypes.includes(event.event_type)) {
                                 this.triggerAlarm(event);
                             }

@@ -72,7 +72,7 @@ class RiwayatController extends Controller
             'flame_value' => 'nullable|numeric',
         ]);
 
-        $isEmergency = in_array(strtoupper($validated['event_type']), ['SMOKE', 'FIRE', 'FIRE ALARM']);
+        $isEmergency = in_array(strtoupper($validated['event_type']), ['SMOKE', 'FLAME', 'FIRE', 'FIRE ALARM']);
         $sirineMode = Setting::getSirineMode();
 
         $riwayat = Riwayat::create([
@@ -178,9 +178,9 @@ class RiwayatController extends Controller
         $isEmergency = $isSmoke || $isFlame;
         
         if ($isSmoke && $isFlame) {
-            $eventType = 'FIRE ALARM';
+            $eventType = 'SENSOR';
         } elseif ($isFlame) {
-            $eventType = 'FIRE';
+            $eventType = 'FLAME';
         } elseif ($isSmoke) {
             $eventType = 'SMOKE';
         } else {

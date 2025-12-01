@@ -294,9 +294,11 @@ http.end();</code></pre>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
                                 {{ $event->event_type === 'SMOKE' ? 'bg-gray-200 text-gray-800' : '' }}
+                                {{ $event->event_type === 'FLAME' ? 'bg-orange-100 text-orange-800' : '' }}
                                 {{ $event->event_type === 'FIRE' ? 'bg-orange-100 text-orange-800' : '' }}
                                 {{ $event->event_type === 'FIRE ALARM' ? 'bg-red-100 text-red-800' : '' }}
-                                {{ !in_array($event->event_type, ['SMOKE', 'FIRE', 'FIRE ALARM']) ? 'bg-gray-100 text-gray-800' : '' }}">
+                                {{ $event->event_type === 'SENSOR' ? 'bg-blue-100 text-blue-800' : '' }}
+                                {{ !in_array($event->event_type, ['SMOKE', 'FLAME', 'FIRE', 'FIRE ALARM', 'SENSOR']) ? 'bg-gray-100 text-gray-800' : '' }}">
                                 {{ $event->event_type }}
                             </span>
                         </td>

@@ -65,12 +65,12 @@ class Riwayat extends Model
 
     public function scopeEmergency($query)
     {
-        return $query->whereIn('event_type', ['SMOKE', 'FIRE', 'FIRE ALARM']);
+        return $query->whereIn('event_type', ['SMOKE', 'FLAME', 'FIRE', 'FIRE ALARM']);
     }
 
     public function isEmergency(): bool
     {
-        return in_array($this->event_type, ['SMOKE', 'FIRE', 'FIRE ALARM']);
+        return in_array($this->event_type, ['SMOKE', 'FLAME', 'FIRE', 'FIRE ALARM']);
     }
 
     public function getStatusBadgeAttribute(): string
