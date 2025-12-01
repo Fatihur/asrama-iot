@@ -53,6 +53,28 @@ Route::get('/kamera/latest', [KameraController::class, 'latestImage']);
 Route::post('/distribusi/{distribusi}/retry', [DistribusiController::class, 'retry']);
 
 // =====================
+// ALIAS ENDPOINTS (untuk ESP32 compatibility)
+// =====================
+// /api/upload - alias untuk upload gambar
+Route::post('/upload', [KameraController::class, 'store']);
+
+// /api/event - alias untuk kirim event (sama dengan riwayat)
+Route::post('/event', [RiwayatController::class, 'store']);
+Route::get('/event', [RiwayatController::class, 'apiIndex']);
+
+// /api/sensor - untuk data sensor
+Route::post('/sensor', [RiwayatController::class, 'storeSensor']);
+Route::get('/sensor', [RiwayatController::class, 'getSensorData']);
+
+// /api/fire - untuk event kebakaran
+Route::post('/fire', [RiwayatController::class, 'storeFire']);
+Route::get('/fire', [RiwayatController::class, 'getFireEvents']);
+
+// /api/capture - untuk trigger capture dan upload gambar
+Route::post('/capture', [KameraController::class, 'store']);
+Route::get('/capture', [KameraController::class, 'latestImage']);
+
+// =====================
 // HEALTH CHECK
 // =====================
 Route::get('/health', function () {

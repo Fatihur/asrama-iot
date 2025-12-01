@@ -68,6 +68,78 @@
                 <img x-show="cameraTestImage" :src="cameraTestImage" class="mt-2 w-full h-32 object-cover rounded" alt="Test Camera">
             </div>
         </div>
+
+        <!-- Additional Test Panels -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <!-- Test Sensor -->
+            <div class="border rounded-lg p-4">
+                <h4 class="font-medium text-gray-700 mb-2">Tes Sensor</h4>
+                <p class="text-sm text-gray-500 mb-3">Kirim data sensor dummy</p>
+                <button @click="testSensor()" :disabled="testingSensor"
+                    class="w-full rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
+                    <i class="fas fa-thermometer-half mr-2"></i>
+                    <span x-text="testingSensor ? 'Sending...' : 'Tes Sensor'">Tes Sensor</span>
+                </button>
+                <p x-show="sensorTestResult" x-text="sensorTestResult" class="mt-2 text-sm" :class="sensorTestSuccess ? 'text-green-600' : 'text-red-600'"></p>
+            </div>
+
+            <!-- Test Fire -->
+            <div class="border rounded-lg p-4">
+                <h4 class="font-medium text-gray-700 mb-2">Tes Fire</h4>
+                <p class="text-sm text-gray-500 mb-3">Simulasi event kebakaran</p>
+                <button @click="testFire()" :disabled="testingFire"
+                    class="w-full rounded-md bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-500 disabled:opacity-50">
+                    <i class="fas fa-fire mr-2"></i>
+                    <span x-text="testingFire ? 'Sending...' : 'Tes Fire'">Tes Fire</span>
+                </button>
+                <p x-show="fireTestResult" x-text="fireTestResult" class="mt-2 text-sm" :class="fireTestSuccess ? 'text-green-600' : 'text-red-600'"></p>
+            </div>
+
+            <!-- Test Event -->
+            <div class="border rounded-lg p-4">
+                <h4 class="font-medium text-gray-700 mb-2">Tes Event</h4>
+                <p class="text-sm text-gray-500 mb-3">Kirim event generic</p>
+                <button @click="testEvent()" :disabled="testingEvent"
+                    class="w-full rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500 disabled:opacity-50">
+                    <i class="fas fa-bolt mr-2"></i>
+                    <span x-text="testingEvent ? 'Sending...' : 'Tes Event'">Tes Event</span>
+                </button>
+                <p x-show="eventTestResult" x-text="eventTestResult" class="mt-2 text-sm" :class="eventTestSuccess ? 'text-green-600' : 'text-red-600'"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Documentation -->
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">
+            <i class="fas fa-code mr-2 text-indigo-600"></i>API Endpoints (ESP32)
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+            <div class="bg-gray-50 rounded p-3">
+                <code class="text-indigo-600 font-medium">POST /api/riwayat</code>
+                <p class="text-gray-500 mt-1">Kirim kejadian umum</p>
+            </div>
+            <div class="bg-gray-50 rounded p-3">
+                <code class="text-indigo-600 font-medium">POST /api/event</code>
+                <p class="text-gray-500 mt-1">Alias untuk /api/riwayat</p>
+            </div>
+            <div class="bg-gray-50 rounded p-3">
+                <code class="text-indigo-600 font-medium">POST /api/sensor</code>
+                <p class="text-gray-500 mt-1">Kirim data sensor (temp, humidity, smoke)</p>
+            </div>
+            <div class="bg-gray-50 rounded p-3">
+                <code class="text-indigo-600 font-medium">POST /api/fire</code>
+                <p class="text-gray-500 mt-1">Kirim event kebakaran (auto sirine)</p>
+            </div>
+            <div class="bg-gray-50 rounded p-3">
+                <code class="text-indigo-600 font-medium">POST /api/upload</code>
+                <p class="text-gray-500 mt-1">Upload gambar dari kamera</p>
+            </div>
+            <div class="bg-gray-50 rounded p-3">
+                <code class="text-indigo-600 font-medium">POST /api/capture</code>
+                <p class="text-gray-500 mt-1">Alias untuk upload gambar</p>
+            </div>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -249,6 +321,15 @@ function dashboardData() {
         cameraTestResult: '',
         cameraTestSuccess: false,
         cameraTestImage: '',
+        testingSensor: false,
+        sensorTestResult: '',
+        sensorTestSuccess: false,
+        testingFire: false,
+        fireTestResult: '',
+        fireTestSuccess: false,
+        testingEvent: false,
+        eventTestResult: '',
+        eventTestSuccess: false,
 
         init() {
             setInterval(() => this.refresh(), 10000);
@@ -376,6 +457,111 @@ function dashboardData() {
                 this.cameraTestResult = 'Gagal: ' + (err.message || 'Tidak ada gambar');
                 this.cameraTestSuccess = false;
                 this.testingCamera = false;
+            });
+        },
+
+        testSensor() {
+            this.testingSensor = true;
+            this.sensorTestResult = '';
+
+            fetch('/api/sensor', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    device_id: 'TEST-SENSOR-001',
+                    floor: 1,
+                    temperature: 25.5,
+                    humidity: 60,
+                    smoke: 50
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    this.sensorTestResult = 'Data sensor berhasil dikirim! ID: ' + data.data.id;
+                    this.sensorTestSuccess = true;
+                } else {
+                    this.sensorTestResult = 'Gagal: ' + (data.message || 'Unknown error');
+                    this.sensorTestSuccess = false;
+                }
+                this.testingSensor = false;
+            })
+            .catch(err => {
+                this.sensorTestResult = 'Gagal: ' + err.message;
+                this.sensorTestSuccess = false;
+                this.testingSensor = false;
+            });
+        },
+
+        testFire() {
+            this.testingFire = true;
+            this.fireTestResult = '';
+
+            fetch('/api/fire', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    device_id: 'TEST-FIRE-001',
+                    floor: 1,
+                    value: 'Fire test from dashboard'
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    this.fireTestResult = 'Fire event dikirim! Sirine: ' + data.sirine;
+                    this.fireTestSuccess = true;
+                } else {
+                    this.fireTestResult = 'Gagal: ' + (data.message || 'Unknown error');
+                    this.fireTestSuccess = false;
+                }
+                this.testingFire = false;
+            })
+            .catch(err => {
+                this.fireTestResult = 'Gagal: ' + err.message;
+                this.fireTestSuccess = false;
+                this.testingFire = false;
+            });
+        },
+
+        testEvent() {
+            this.testingEvent = true;
+            this.eventTestResult = '';
+
+            fetch('/api/event', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    device_id: 'TEST-EVENT-001',
+                    floor: 1,
+                    event_type: 'MOTION',
+                    value: 'Test event from dashboard'
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    this.eventTestResult = 'Event berhasil dikirim! ID: ' + data.data.id;
+                    this.eventTestSuccess = true;
+                } else {
+                    this.eventTestResult = 'Gagal: ' + (data.message || 'Unknown error');
+                    this.eventTestSuccess = false;
+                }
+                this.testingEvent = false;
+            })
+            .catch(err => {
+                this.eventTestResult = 'Gagal: ' + err.message;
+                this.eventTestSuccess = false;
+                this.testingEvent = false;
             });
         }
     };

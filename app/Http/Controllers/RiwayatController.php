@@ -147,4 +147,114 @@ class RiwayatController extends Controller
             ]);
         }
     }
+
+    public function storeSensor(Request $request)
+    {
+        $validated = $request->validate([
+            'device_id' => 'required|string|max:50',
+            'floor' => 'required|integer|min:1|max:100',
+            'value' => 'nullable|string|max:255',
+            'temperature' => 'nullable|numeric',
+            'humidity' => 'nullable|numeric',
+            'smoke' => 'nullable|numeric',
+        ]);
+
+        $value = $validated['value'] ?? json_encode([
+            'temperature' => $validated['temperature'] ?? null,
+            'humidity' => $validated['humidity'] ?? null,
+            'smoke' => $validated['smoke'] ?? null,
+        ]);
+
+        $riwayat = Riwayat::create([
+            'device_id' => $validated['device_id'],
+            'floor' => $validated['floor'],
+            'event_type' => 'SENSOR',
+            'value' => $value,
+            'notif_channel' => 'API',
+            'sirine_status' => 'OFF',
+            'timestamp' => now(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Data sensor berhasil disimpan',
+            'data' => $riwayat,
+        ], 201);
+    }
+
+    public function getSensorData(Request $request)
+    {
+        $query = Riwayat::where('event_type', 'SENSOR');
+
+        if ($request->filled('device_id')) {
+            $query->where('device_id', $request->device_id);
+        }
+        if ($request->filled('floor')) {
+            $query->where('floor', $request->floor);
+        }
+        if ($request->filled('limit')) {
+            $query->limit($request->limit);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $query->orderBy('timestamp', 'desc')->get(),
+        ]);
+    }
+
+    public function storeFire(Request $request)
+    {
+        $validated = $request->validate([
+            'device_id' => 'required|string|max:50',
+            'floor' => 'required|integer|min:1|max:100',
+            'value' => 'nullable|string|max:255',
+            'image_url' => 'nullable|url|max:500',
+        ]);
+
+        $sirineMode = Setting::getSirineMode();
+
+        $riwayat = Riwayat::create([
+            'device_id' => $validated['device_id'],
+            'floor' => $validated['floor'],
+            'event_type' => 'FIRE',
+            'value' => $validated['value'] ?? 'Fire detected',
+            'image_url' => $validated['image_url'] ?? null,
+            'notif_channel' => 'WEB, API',
+            'sirine_status' => $sirineMode !== 'OFF' ? 'ON' : 'OFF',
+            'timestamp' => now(),
+        ]);
+
+        if ($sirineMode !== 'OFF') {
+            SirineLog::log('ON', 'AUTO', null, $riwayat->id, $validated['device_id'], 'Auto triggered by FIRE');
+        }
+
+        $this->sendNotifications($riwayat);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Fire event berhasil disimpan',
+            'data' => $riwayat,
+            'sirine' => $riwayat->sirine_status,
+        ], 201);
+    }
+
+    public function getFireEvents(Request $request)
+    {
+        $query = Riwayat::where('event_type', 'FIRE');
+
+        if ($request->filled('device_id')) {
+            $query->where('device_id', $request->device_id);
+        }
+        if ($request->filled('floor')) {
+            $query->where('floor', $request->floor);
+        }
+        if ($request->filled('limit')) {
+            $query->limit($request->limit);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $query->orderBy('timestamp', 'desc')->get(),
+        ]);
+    }
 }
