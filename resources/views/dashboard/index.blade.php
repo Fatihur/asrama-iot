@@ -25,33 +25,32 @@
         </div>
     </div>
 
-    <!-- Notification Permission Banner -->
-    <div id="notification-banner" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 hidden">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center">
-                <i class="fas fa-bell text-yellow-400 mr-3"></i>
-                <p class="text-sm text-yellow-700">
-                    <strong>Aktifkan Notifikasi</strong> untuk menerima alert kebakaran dengan suara keras!
-                </p>
+    <!-- PWA Install & Notification Banner -->
+    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow p-4 mb-8">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div class="flex items-center text-white">
+                <i class="fas fa-mobile-alt text-2xl mr-3"></i>
+                <div>
+                    <p class="font-semibold">Install Aplikasi & Notifikasi</p>
+                    <p id="push-status" class="text-sm text-indigo-100">Memuat status...</p>
+                </div>
             </div>
-            <button onclick="requestNotificationPermission()" class="bg-yellow-400 text-yellow-800 px-4 py-2 rounded-md text-sm font-semibold hover:bg-yellow-500">
-                <i class="fas fa-bell mr-1"></i> Aktifkan
-            </button>
+            <div class="flex gap-2 flex-wrap">
+                <button id="install-btn" onclick="AsramaApp.installPWA()" 
+                    class="hidden bg-white text-indigo-600 px-4 py-2 rounded-md text-sm font-semibold hover:bg-indigo-50">
+                    <i class="fas fa-download mr-1"></i> Install App
+                </button>
+                <button id="push-subscribe-btn" onclick="AsramaApp.toggleNotification()" 
+                    class="bg-yellow-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-yellow-400">
+                    <i class="fas fa-bell mr-1"></i> Aktifkan Notifikasi
+                </button>
+                <button onclick="AsramaApp.testNotification()" 
+                    class="bg-white/20 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-white/30">
+                    <i class="fas fa-paper-plane mr-1"></i> Test Notifikasi
+                </button>
+            </div>
         </div>
     </div>
-    <script>
-        if ('Notification' in window && Notification.permission === 'default') {
-            document.getElementById('notification-banner').classList.remove('hidden');
-        }
-        function requestNotificationPermission() {
-            Notification.requestPermission().then(p => {
-                if (p === 'granted') {
-                    document.getElementById('notification-banner').classList.add('hidden');
-                    alert('Notifikasi berhasil diaktifkan!');
-                }
-            });
-        }
-    </script>
 
     <!-- Test Panel -->
     <div class="bg-white rounded-lg shadow p-6 mb-8">
@@ -62,8 +61,8 @@
             <!-- Test Alarm -->
             <div class="border rounded-lg p-4 border-red-200 bg-red-50">
                 <h4 class="font-medium text-red-700 mb-2">🚨 Tes Alarm</h4>
-                <p class="text-sm text-red-600 mb-3">Test push notification + suara keras</p>
-                <button onclick="AlarmSystem.test()"
+                <p class="text-sm text-red-600 mb-3">Test alarm lokal + suara keras</p>
+                <button onclick="AsramaApp.testAlarm()"
                     class="w-full rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500">
                     <i class="fas fa-volume-up mr-2"></i>Tes Alarm
                 </button>

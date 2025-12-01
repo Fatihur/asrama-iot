@@ -1,253 +1,273 @@
-// Push Notification & Alarm System
-const AlarmSystem = {
+// PWA + FCM Notification System - Asrama IoT
+const AsramaApp = {
+    deferredPrompt: null,
+    isInstalled: false,
+    isSubscribed: false,
+    
+    // Alarm state
     audioContext: null,
     isPlaying: false,
-    oscillator: null,
-    gainNode: null,
-    notificationPermission: false,
-    lastEventId: 0,
-    checkInterval: null,
 
-    init() {
-        this.requestPermission();
-        this.startPolling();
-        this.loadLastEventId();
-        console.log('🔔 Alarm System initialized');
+    // Initialize
+    async init() {
+        console.log('🚀 Initializing Asrama IoT PWA...');
+        
+        this.checkInstalled();
+        this.setupInstallPrompt();
+        
+        // Initialize Firebase
+        if (typeof FirebaseNotif !== 'undefined') {
+            await FirebaseNotif.init();
+            this.isSubscribed = await FirebaseNotif.checkSubscription();
+        }
+        
+        this.updateUI();
+        console.log('✅ PWA Ready!');
     },
 
-    async requestPermission() {
-        if (!('Notification' in window)) {
-            console.warn('Browser tidak support notifikasi');
+    checkInstalled() {
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            this.isInstalled = true;
+            console.log('📱 Running as installed PWA');
+        }
+    },
+
+    // Toggle notification subscription
+    async toggleNotification() {
+        if (typeof FirebaseNotif === 'undefined') {
+            alert('Firebase belum dimuat. Refresh halaman.');
             return;
         }
 
-        if (Notification.permission === 'granted') {
-            this.notificationPermission = true;
-        } else if (Notification.permission !== 'denied') {
-            const permission = await Notification.requestPermission();
-            this.notificationPermission = permission === 'granted';
-        }
-
-        if (this.notificationPermission) {
-            console.log('✅ Notifikasi diizinkan');
-        }
-    },
-
-    loadLastEventId() {
-        const saved = localStorage.getItem('lastEventId');
-        if (saved) {
-            this.lastEventId = parseInt(saved);
-        }
-    },
-
-    saveLastEventId(id) {
-        this.lastEventId = id;
-        localStorage.setItem('lastEventId', id.toString());
-    },
-
-    startPolling() {
-        // Check setiap 3 detik
-        this.checkInterval = setInterval(() => this.checkNewEvents(), 3000);
-        // Check langsung
-        this.checkNewEvents();
-    },
-
-    async checkNewEvents() {
-        try {
-            const response = await fetch('/api/riwayat?limit=5');
-            const events = await response.json();
-            
-            if (events.length > 0) {
-                const latestId = events[0].id;
-                
-                // Jika ada event baru
-                if (latestId > this.lastEventId && this.lastEventId > 0) {
-                    // Cek event baru yang emergency
-                    for (const event of events) {
-                        if (event.id > this.lastEventId) {
-                            if (['SMOKE', 'FIRE', 'FIRE ALARM'].includes(event.event_type)) {
-                                this.triggerAlarm(event);
-                            }
-                        }
-                    }
-                }
-                
-                this.saveLastEventId(latestId);
+        if (this.isSubscribed) {
+            // Unsubscribe
+            await FirebaseNotif.removeTokenFromServer();
+            localStorage.removeItem('fcm_token');
+            this.isSubscribed = false;
+            this.updateUI();
+            alert('Notifikasi dinonaktifkan');
+        } else {
+            // Subscribe
+            const btn = document.getElementById('push-subscribe-btn');
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...';
+                btn.disabled = true;
             }
-        } catch (error) {
-            console.error('Error checking events:', error);
+
+            const token = await FirebaseNotif.requestPermissionAndGetToken();
+            
+            if (token) {
+                localStorage.setItem('fcm_token', token);
+                this.isSubscribed = true;
+                alert('✅ Notifikasi berhasil diaktifkan!\n\nAnda akan menerima alert kebakaran di device ini.');
+            } else {
+                alert('Gagal mengaktifkan notifikasi. Pastikan izin notifikasi diaktifkan.');
+            }
+
+            if (btn) btn.disabled = false;
+            this.updateUI();
         }
     },
 
-    triggerAlarm(event) {
-        // Show notification
-        this.showNotification(event);
-        // Play loud alarm
-        this.playAlarm();
-        // Show on-screen alert
-        this.showOnScreenAlert(event);
+    // Update UI
+    updateUI() {
+        const btn = document.getElementById('push-subscribe-btn');
+        const statusEl = document.getElementById('push-status');
+
+        if (!btn) return;
+
+        if (this.isSubscribed) {
+            btn.innerHTML = '<i class="fas fa-bell mr-1"></i> Notifikasi Aktif';
+            btn.className = 'bg-green-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-green-400';
+            if (statusEl) statusEl.textContent = '✅ Notifikasi aktif - akan menerima alert kebakaran';
+        } else {
+            btn.innerHTML = '<i class="fas fa-bell-slash mr-1"></i> Aktifkan Notifikasi';
+            btn.className = 'bg-yellow-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-yellow-400';
+            if (statusEl) statusEl.textContent = 'Klik untuk mengaktifkan notifikasi alert kebakaran';
+        }
     },
 
-    showNotification(event) {
-        if (!this.notificationPermission) return;
+    // Test notification
+    async testNotification() {
+        try {
+            const res = await fetch('/api/fcm/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                }
+            });
+            const data = await res.json();
+            alert(`Test notification sent!\nSuccess: ${data.success || 0}\nFailed: ${data.failed || 0}`);
+        } catch (err) {
+            alert('Error: ' + err.message);
+        }
+    },
 
-        const title = `🚨 ${event.event_type} TERDETEKSI!`;
-        const options = {
-            body: `Lantai ${event.floor} - ${event.device_id}\n${new Date(event.timestamp).toLocaleString('id-ID')}`,
-            icon: '/favicon.ico',
-            tag: 'fire-alarm-' + event.id,
-            requireInteraction: true
-        };
-
-        const notification = new Notification(title, options);
-        
-        notification.onclick = () => {
-            window.focus();
-            this.stopAlarm();
-            window.location.href = '/riwayat/' + event.id;
-            notification.close();
-        };
+    // ========== ALARM SYSTEM ==========
+    handleEmergency(event) {
+        console.log('🚨 EMERGENCY:', event);
+        this.playAlarm();
+        this.showAlert(event);
     },
 
     playAlarm() {
         if (this.isPlaying) return;
-        
-        try {
-            // Create audio context
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            this.isPlaying = true;
+        this.isPlaying = true;
 
-            this.playAlarmPattern();
-        } catch (error) {
-            console.error('Error playing alarm:', error);
-            // Fallback ke audio element
-            this.playFallbackAlarm();
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.alarmLoop();
+        } catch (err) {
+            console.error('Audio error:', err);
         }
     },
 
-    playAlarmPattern() {
-        if (!this.audioContext || !this.isPlaying) return;
+    alarmLoop() {
+        if (!this.isPlaying || !this.audioContext) return;
 
         const now = this.audioContext.currentTime;
         
-        // Pattern: High-Low siren
-        for (let i = 0; i < 10; i++) {
-            // High tone
-            this.playTone(880, now + i * 0.5, 0.25, 0.8);
-            // Low tone
-            this.playTone(440, now + i * 0.5 + 0.25, 0.25, 0.8);
+        for (let i = 0; i < 8; i++) {
+            this.beep(880, now + i * 0.4, 0.2);
+            this.beep(440, now + i * 0.4 + 0.2, 0.2);
         }
 
-        // Repeat pattern
-        setTimeout(() => {
-            if (this.isPlaying) {
-                this.playAlarmPattern();
-            }
-        }, 5000);
+        setTimeout(() => this.alarmLoop(), 3200);
     },
 
-    playTone(frequency, startTime, duration, volume) {
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
+    beep(freq, start, dur) {
+        const osc = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
         
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
+        osc.connect(gain);
+        gain.connect(this.audioContext.destination);
         
-        oscillator.frequency.value = frequency;
-        oscillator.type = 'square'; // Harsh sound for alarm
+        osc.frequency.value = freq;
+        osc.type = 'square';
         
-        gainNode.gain.setValueAtTime(volume, startTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+        gain.gain.setValueAtTime(0.5, start);
+        gain.gain.exponentialRampToValueAtTime(0.01, start + dur);
         
-        oscillator.start(startTime);
-        oscillator.stop(startTime + duration);
-    },
-
-    playFallbackAlarm() {
-        // Create beep using oscillator
-        const audio = document.getElementById('alarm-audio');
-        if (audio) {
-            audio.loop = true;
-            audio.volume = 1.0;
-            audio.play().catch(e => console.log('Audio play failed:', e));
-        }
+        osc.start(start);
+        osc.stop(start + dur);
     },
 
     stopAlarm() {
         this.isPlaying = false;
-        
         if (this.audioContext) {
             this.audioContext.close();
             this.audioContext = null;
         }
-
-        const audio = document.getElementById('alarm-audio');
-        if (audio) {
-            audio.pause();
-            audio.currentTime = 0;
-        }
-
-        // Hide on-screen alert
-        const alert = document.getElementById('alarm-overlay');
-        if (alert) {
-            alert.remove();
-        }
-
-        console.log('🔇 Alarm stopped');
+        const overlay = document.getElementById('alarm-overlay');
+        if (overlay) overlay.remove();
     },
 
-    showOnScreenAlert(event) {
-        // Remove existing
+    showAlert(event) {
         const existing = document.getElementById('alarm-overlay');
         if (existing) existing.remove();
 
-        const overlay = document.createElement('div');
-        overlay.id = 'alarm-overlay';
-        overlay.innerHTML = `
-            <div style="position:fixed;inset:0;background:rgba(220,38,38,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:pulse 0.5s infinite alternate;">
-                <div style="text-align:center;color:white;">
-                    <div style="font-size:80px;margin-bottom:20px;">🚨</div>
-                    <div style="font-size:48px;font-weight:bold;margin-bottom:10px;">${event.event_type}</div>
-                    <div style="font-size:32px;margin-bottom:10px;">TERDETEKSI!</div>
-                    <div style="font-size:24px;margin-bottom:30px;">Lantai ${event.floor} - ${event.device_id}</div>
-                    <button onclick="AlarmSystem.stopAlarm();window.location.href='/riwayat/${event.id}'" 
-                            style="padding:15px 40px;font-size:20px;background:white;color:#dc2626;border:none;border-radius:10px;cursor:pointer;font-weight:bold;">
-                        LIHAT DETAIL & STOP ALARM
+        const div = document.createElement('div');
+        div.id = 'alarm-overlay';
+        div.innerHTML = `
+            <div style="position:fixed;inset:0;background:rgba(220,38,38,0.97);z-index:9999;display:flex;align-items:center;justify-content:center;animation:flash .3s infinite alternate">
+                <div style="text-align:center;color:white;padding:20px">
+                    <div style="font-size:100px">🚨</div>
+                    <div style="font-size:48px;font-weight:bold">${event.event_type}</div>
+                    <div style="font-size:28px;margin:10px 0">TERDETEKSI!</div>
+                    <div style="font-size:20px;margin-bottom:30px">Lantai ${event.floor} - ${event.device_id}</div>
+                    <button onclick="AsramaApp.stopAlarm();location.href='/riwayat/${event.id}'" 
+                        style="padding:20px 40px;font-size:18px;background:white;color:#dc2626;border:none;border-radius:10px;font-weight:bold;cursor:pointer">
+                        LIHAT DETAIL
                     </button>
-                    <div style="margin-top:20px;">
-                        <button onclick="AlarmSystem.stopAlarm()" 
-                                style="padding:10px 30px;font-size:16px;background:transparent;color:white;border:2px solid white;border-radius:5px;cursor:pointer;">
-                            Stop Alarm Saja
+                    <div style="margin-top:15px">
+                        <button onclick="AsramaApp.stopAlarm()" 
+                            style="padding:10px 25px;background:transparent;color:white;border:2px solid white;border-radius:5px;cursor:pointer">
+                            Stop Alarm
                         </button>
                     </div>
                 </div>
             </div>
-            <style>
-                @keyframes pulse {
-                    from { background: rgba(220,38,38,0.95); }
-                    to { background: rgba(185,28,28,0.95); }
-                }
-            </style>
+            <style>@keyframes flash{from{opacity:1}to{opacity:.85}}</style>
         `;
-        document.body.appendChild(overlay);
+        document.body.appendChild(div);
     },
 
-    // Test function
-    test() {
-        this.triggerAlarm({
+    async testAlarm() {
+        // Trigger local alarm di web
+        this.handleEmergency({
             id: 999,
             event_type: 'FIRE ALARM',
             floor: 1,
-            device_id: 'TEST-DEVICE',
-            timestamp: new Date().toISOString()
+            device_id: 'TEST'
         });
+
+        // Trigger alarm ke mobile app via API
+        try {
+            const res = await fetch('/api/fire', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({
+                    device_id: 'WEB-TRIGGER',
+                    floor: 1,
+                    flame_value: 100,
+                    value: 'Manual trigger dari dashboard web'
+                })
+            });
+            const data = await res.json();
+            console.log('Mobile alarm triggered:', data);
+        } catch (err) {
+            console.error('Failed to trigger mobile alarm:', err);
+        }
+    },
+
+    // ========== PWA INSTALL ==========
+    setupInstallPrompt() {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            this.showInstallButton();
+            console.log('📲 Install prompt ready');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            this.deferredPrompt = null;
+            this.isInstalled = true;
+            this.hideInstallButton();
+            console.log('✅ PWA Installed!');
+        });
+    },
+
+    async installPWA() {
+        if (!this.deferredPrompt) {
+            alert('Untuk install:\n\n📱 Mobile: Menu browser → "Add to Home Screen"\n\n💻 Desktop: Klik icon install di address bar');
+            return;
+        }
+
+        this.deferredPrompt.prompt();
+        const result = await this.deferredPrompt.userChoice;
+        
+        if (result.outcome === 'accepted') {
+            console.log('✅ User accepted install');
+        }
+        this.deferredPrompt = null;
+    },
+
+    showInstallButton() {
+        const btn = document.getElementById('install-btn');
+        if (btn) btn.classList.remove('hidden');
+    },
+
+    hideInstallButton() {
+        const btn = document.getElementById('install-btn');
+        if (btn) btn.classList.add('hidden');
     }
 };
 
-// Initialize when DOM ready
-document.addEventListener('DOMContentLoaded', () => {
-    AlarmSystem.init();
-});
+// Auto init
+document.addEventListener('DOMContentLoaded', () => AsramaApp.init());
 
-// Expose globally
-window.AlarmSystem = AlarmSystem;
+window.AsramaApp = AsramaApp;
