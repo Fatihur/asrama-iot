@@ -279,6 +279,8 @@ http.end();</code></pre>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Device</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lantai</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jenis</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nilai</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sirine</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
                     </tr>
@@ -295,11 +297,41 @@ http.end();</code></pre>
                             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
                                 {{ $event->event_type === 'SMOKE' ? 'bg-gray-200 text-gray-800' : '' }}
                                 {{ $event->event_type === 'FLAME' ? 'bg-orange-100 text-orange-800' : '' }}
-                                {{ $event->event_type === 'FIRE' ? 'bg-orange-100 text-orange-800' : '' }}
+                                {{ $event->event_type === 'FIRE' ? 'bg-red-100 text-red-800' : '' }}
                                 {{ $event->event_type === 'FIRE ALARM' ? 'bg-red-100 text-red-800' : '' }}
                                 {{ $event->event_type === 'SENSOR' ? 'bg-blue-100 text-blue-800' : '' }}
                                 {{ !in_array($event->event_type, ['SMOKE', 'FLAME', 'FIRE', 'FIRE ALARM', 'SENSOR']) ? 'bg-gray-100 text-gray-800' : '' }}">
+                                @if($event->event_type === 'SMOKE')<i class="fas fa-smog mr-1"></i>@endif
+                                @if($event->event_type === 'FLAME')<i class="fas fa-fire-alt mr-1"></i>@endif
+                                @if($event->event_type === 'FIRE')<i class="fas fa-fire mr-1"></i>@endif
+                                @if($event->event_type === 'FIRE ALARM')<i class="fas fa-bell mr-1"></i>@endif
+                                @if($event->event_type === 'SENSOR')<i class="fas fa-microchip mr-1"></i>@endif
                                 {{ $event->event_type }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                            @php
+                                $value = $event->value ?? '-';
+                                $jsonData = json_decode($value, true);
+                            @endphp
+                            @if($jsonData && is_array($jsonData))
+                                <div class="text-xs">
+                                    @if(isset($jsonData['mq2_value']))
+                                        <span class="inline-block bg-gray-100 rounded px-1 mr-1">MQ2: {{ $jsonData['mq2_value'] }}</span>
+                                    @endif
+                                    @if(isset($jsonData['flame_detected']))
+                                        <span class="inline-block {{ $jsonData['flame_detected'] ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }} rounded px-1">
+                                            Api: {{ $jsonData['flame_detected'] ? 'Ya' : 'Tidak' }}
+                                        </span>
+                                    @endif
+                                </div>
+                            @else
+                                {{ Str::limit($value, 20) }}
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $event->sirine_status === 'ON' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' }}">
+                                {{ $event->sirine_status }}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">

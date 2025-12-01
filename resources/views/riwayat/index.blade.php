@@ -79,16 +79,42 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
                             {{ $r->event_type === 'SMOKE' ? 'bg-gray-200 text-gray-800' : '' }}
-                            {{ $r->event_type === 'FIRE' ? 'bg-orange-100 text-orange-800' : '' }}
+                            {{ $r->event_type === 'FLAME' ? 'bg-orange-100 text-orange-800' : '' }}
+                            {{ $r->event_type === 'FIRE' ? 'bg-red-100 text-red-800' : '' }}
                             {{ $r->event_type === 'FIRE ALARM' ? 'bg-red-100 text-red-800' : '' }}
-                            {{ !in_array($r->event_type, ['SMOKE', 'FIRE', 'FIRE ALARM']) ? 'bg-gray-100 text-gray-800' : '' }}">
+                            {{ $r->event_type === 'SENSOR' ? 'bg-blue-100 text-blue-800' : '' }}
+                            {{ !in_array($r->event_type, ['SMOKE', 'FLAME', 'FIRE', 'FIRE ALARM', 'SENSOR']) ? 'bg-gray-100 text-gray-800' : '' }}">
                             @if($r->event_type === 'SMOKE')<i class="fas fa-smog mr-1"></i>@endif
+                            @if($r->event_type === 'FLAME')<i class="fas fa-fire-alt mr-1 text-orange-500"></i>@endif
                             @if($r->event_type === 'FIRE')<i class="fas fa-fire mr-1"></i>@endif
                             @if($r->event_type === 'FIRE ALARM')<i class="fas fa-bell mr-1"></i>@endif
+                            @if($r->event_type === 'SENSOR')<i class="fas fa-microchip mr-1"></i>@endif
                             {{ $r->event_type }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $r->value ?? '-' }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                        @php
+                            $value = $r->value ?? '-';
+                            $jsonData = json_decode($value, true);
+                        @endphp
+                        @if($jsonData && is_array($jsonData))
+                            <div class="text-xs">
+                                @if(isset($jsonData['mq2_value']))
+                                    <span class="inline-block bg-gray-100 rounded px-1 mr-1">MQ2: {{ $jsonData['mq2_value'] }}</span>
+                                @endif
+                                @if(isset($jsonData['mq2_ppm']))
+                                    <span class="inline-block bg-gray-100 rounded px-1 mr-1">PPM: {{ $jsonData['mq2_ppm'] }}</span>
+                                @endif
+                                @if(isset($jsonData['flame_detected']))
+                                    <span class="inline-block {{ $jsonData['flame_detected'] ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }} rounded px-1">
+                                        Api: {{ $jsonData['flame_detected'] ? 'Ya' : 'Tidak' }}
+                                    </span>
+                                @endif
+                            </div>
+                        @else
+                            {{ Str::limit($value, 30) }}
+                        @endif
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $r->sirine_status === 'ON' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' }}">
                             {{ $r->sirine_status }}
