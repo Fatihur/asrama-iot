@@ -4,15 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#4f46e5">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Asrama IoT">
     <title>@yield('title', 'Dashboard') - Asrama IoT</title>
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
@@ -23,20 +15,59 @@
     <style>
         [x-cloak] { display: none !important; }
         .animate-pulse-fast { animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes alarm-flash {
+            0%, 100% { background-color: rgb(220 38 38); }
+            50% { background-color: rgb(239 68 68); }
+        }
+        .alarm-flash { animation: alarm-flash 0.5s ease-in-out infinite; }
     </style>
-    
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
-    <script src="/js/firebase-init.js"></script>
-    <script src="/js/notification.js" defer></script>
     @stack('styles')
 </head>
-<body class="h-full" x-data="{ sidebarOpen: false }">
-    <!-- Hidden audio element for fallback alarm -->
-    <audio id="alarm-audio" preload="auto">
-        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZeXk42Gg4OHjpaeoqGdlIuEgYSMmKKpq6eglI2IiI2WoKirrKifjYOBg4uXo6urrquhlYqFhoyYpKqtq6qjmI2Hh4yWoqutrauonpOKh4mRnKWrra2ropiNiIqPmaSrrq6spZqPi4yRnaWsr66so5mPi4yTn6arrrCuqZ2Sj42Sn6errrCvq6CUkI+Tn6irrrCwrKKXkZCUoKmtr7Cvq6KXkpGVoamtsLGwrKOYk5KWoqqtsLGwraWalJOXpKuusbKxr6eblZWYpayvsrOyr6mdl5aZp62ws7OzsKugnJeaq66xtLS0sq2hnpmbrq+xtbW1s6+jn5qdrrCytba2tLGloZ6erbGztba3trOoo6CfrrG0tre4t7WqpaGhsLK1uLi4t7WsqKOjsrO2ubm5uLevq6WktLW3urq6uru0raansLa4u7u8vLy4sKyotri6vL2+vr25s66pubq7vr6/v767trCxu7y+wMDAwL+9uLK0vL3AwcLCwsHAu7W4vcDCw8PExMS/vLi6wMHDxMXFxcXCvry+wcPFxsbGxsbFwb7AwsPGx8jIyMjGw8DCxMbHycnJycnIxcPFx8jKysvLy8vJxsXHycrLzMzMzMvKyMfJy8zNzs7Ozs3LycnLzM7P0NDQ0M/NzMvNz9DR0tLS0tHPzc3P0dLT1NTU1NPS0NDR09TW1tbW1tbU09LT1dbY2NjY2NfW1NTV19ja2tra2tnY1tbY2drb3Nzc3NzbGRoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa" type="audio/wav">
+<body class="h-full" x-data="alarmSystem()" x-init="initAlarm()">
+    <!-- Alarm Modal -->
+    <div x-show="showAlarm" x-cloak class="fixed inset-0 z-[100] overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="fixed inset-0 alarm-flash" @click="dismissAlarm()"></div>
+            <div class="relative bg-white rounded-lg shadow-2xl max-w-md w-full p-6 transform transition-all"
+                 x-show="showAlarm"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100">
+                <div class="text-center">
+                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                        <i class="fas fa-fire text-red-600 text-3xl animate-pulse"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">PERINGATAN DARURAT!</h3>
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                        <p class="text-lg font-semibold text-red-800" x-text="alarmEvent.event_type"></p>
+                        <p class="text-gray-700 mt-2">
+                            <i class="fas fa-map-marker-alt mr-1"></i> Lantai <span x-text="alarmEvent.floor"></span>
+                        </p>
+                        <p class="text-gray-600 text-sm mt-1">
+                            <i class="fas fa-microchip mr-1"></i> <span x-text="alarmEvent.device_id"></span>
+                        </p>
+                        <p class="text-gray-500 text-xs mt-2" x-text="alarmEvent.timestamp"></p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button @click="acknowledgeAlarm()" 
+                            class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-lg transition">
+                            <i class="fas fa-check mr-2"></i> Konfirmasi (ACK)
+                        </button>
+                        <button @click="dismissAlarm()" 
+                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition">
+                            <i class="fas fa-volume-mute mr-2"></i> Matikan Alarm
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio element for alarm sound -->
+    <audio id="alarm-audio" preload="auto" loop>
+        <source src="data:audio/wav;base64,UklGRl9vT19teleVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZW..." type="audio/wav">
     </audio>
+
     <div class="min-h-full">
         <!-- Sidebar Mobile -->
         <div x-show="sidebarOpen" class="relative z-50 lg:hidden" x-cloak>
@@ -140,22 +171,137 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            updateSirineStatus();
-            setInterval(updateSirineStatus, 15000);
-        });
+        // Alarm System
+        function alarmSystem() {
+            return {
+                sidebarOpen: false,
+                showAlarm: false,
+                alarmEvent: { event_type: '', floor: '', device_id: '', timestamp: '', id: null },
+                audioContext: null,
+                oscillator: null,
+                gainNode: null,
+                lastEventId: localStorage.getItem('lastEventId') || 0,
+                sseConnection: null,
 
-        function updateSirineStatus() {
-            fetch('/api/sirine')
-                .then(r => r.text())
-                .then(status => {
-                    const el = document.getElementById('sirine-status');
-                    if (!el) return;
-                    el.textContent = status;
-                    el.className = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ' +
-                        (status === 'ON' ? 'bg-red-100 text-red-800 animate-pulse-fast' :
-                         status === 'OFF' ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800');
-                }).catch(() => {});
+                initAlarm() {
+                    this.connectSSE();
+                    this.updateSirineStatus();
+                    setInterval(() => this.updateSirineStatus(), 15000);
+                },
+
+                connectSSE() {
+                    if (this.sseConnection) {
+                        this.sseConnection.close();
+                    }
+
+                    this.sseConnection = new EventSource('/dashboard/sse');
+                    
+                    this.sseConnection.addEventListener('update', (e) => {
+                        const data = JSON.parse(e.data);
+                        if (data.latest && data.latest.id > this.lastEventId) {
+                            const event = data.latest;
+                            const emergencyTypes = ['SMOKE', 'FIRE', 'FIRE ALARM'];
+                            if (emergencyTypes.includes(event.event_type)) {
+                                this.triggerAlarm(event);
+                            }
+                            this.lastEventId = event.id;
+                            localStorage.setItem('lastEventId', event.id);
+                        }
+                    });
+
+                    this.sseConnection.onerror = () => {
+                        setTimeout(() => this.connectSSE(), 5000);
+                    };
+                },
+
+                triggerAlarm(event) {
+                    this.alarmEvent = {
+                        id: event.id,
+                        event_type: event.event_type,
+                        floor: event.floor,
+                        device_id: event.device_id,
+                        timestamp: event.timestamp
+                    };
+                    this.showAlarm = true;
+                    this.playAlarmSound();
+                },
+
+                playAlarmSound() {
+                    try {
+                        if (!this.audioContext) {
+                            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        }
+                        
+                        if (this.oscillator) {
+                            this.oscillator.stop();
+                        }
+
+                        this.oscillator = this.audioContext.createOscillator();
+                        this.gainNode = this.audioContext.createGain();
+                        
+                        this.oscillator.connect(this.gainNode);
+                        this.gainNode.connect(this.audioContext.destination);
+                        
+                        this.oscillator.frequency.value = 880;
+                        this.oscillator.type = 'square';
+                        this.gainNode.gain.value = 0.3;
+                        
+                        this.oscillator.start();
+                        
+                        // Siren effect
+                        const siren = () => {
+                            if (!this.showAlarm) return;
+                            this.oscillator.frequency.setValueAtTime(880, this.audioContext.currentTime);
+                            this.oscillator.frequency.linearRampToValueAtTime(440, this.audioContext.currentTime + 0.5);
+                            this.oscillator.frequency.linearRampToValueAtTime(880, this.audioContext.currentTime + 1);
+                            setTimeout(siren, 1000);
+                        };
+                        siren();
+                    } catch (e) {
+                        console.error('Audio error:', e);
+                    }
+                },
+
+                stopAlarmSound() {
+                    if (this.oscillator) {
+                        this.oscillator.stop();
+                        this.oscillator = null;
+                    }
+                },
+
+                dismissAlarm() {
+                    this.showAlarm = false;
+                    this.stopAlarmSound();
+                },
+
+                acknowledgeAlarm() {
+                    if (this.alarmEvent.id) {
+                        fetch(`/api/riwayat/${this.alarmEvent.id}/ack`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        }).then(() => {
+                            this.dismissAlarm();
+                        });
+                    } else {
+                        this.dismissAlarm();
+                    }
+                },
+
+                updateSirineStatus() {
+                    fetch('/api/sirine')
+                        .then(r => r.text())
+                        .then(status => {
+                            const el = document.getElementById('sirine-status');
+                            if (!el) return;
+                            el.textContent = status;
+                            el.className = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ' +
+                                (status === 'ON' ? 'bg-red-100 text-red-800 animate-pulse-fast' :
+                                 status === 'OFF' ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800');
+                        }).catch(() => {});
+                }
+            };
         }
     </script>
     @stack('scripts')

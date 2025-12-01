@@ -54,14 +54,22 @@ class DashboardController extends Controller
         return response()->stream(function () {
             $lastId = 0;
             while (true) {
-                $latest = Riwayat::select('id', 'device_id', 'floor', 'event_type', 'sirine_status', 'timestamp')
+                $latest = Riwayat::select('id', 'device_id', 'floor', 'event_type', 'sirine_status', 'ack_status', 'timestamp')
                     ->orderBy('id', 'desc')
                     ->first();
 
                 if ($latest && $latest->id !== $lastId) {
                     $lastId = $latest->id;
                     $data = [
-                        'latest' => $latest,
+                        'latest' => [
+                            'id' => $latest->id,
+                            'device_id' => $latest->device_id,
+                            'floor' => $latest->floor,
+                            'event_type' => $latest->event_type,
+                            'sirine_status' => $latest->sirine_status,
+                            'ack_status' => $latest->ack_status,
+                            'timestamp' => $latest->timestamp->format('d/m/Y H:i:s'),
+                        ],
                         'pending_count' => Riwayat::where('ack_status', 'PENDING')->count(),
                         'sirine_mode' => Setting::getSirineMode(),
                     ];
@@ -71,7 +79,7 @@ class DashboardController extends Controller
                 }
 
                 if (connection_aborted()) break;
-                sleep(5);
+                sleep(2);
             }
         }, 200, [
             'Content-Type' => 'text/event-stream',

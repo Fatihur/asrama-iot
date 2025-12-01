@@ -100,10 +100,4 @@ Route::get('/ping', function () {
     return response('pong', 200)->header('Content-Type', 'text/plain');
 });
 
-// =====================
-// FCM (Firebase Cloud Messaging) API
-// =====================
-Route::post('/fcm/register', [App\Http\Controllers\FcmController::class, 'register']);
-Route::post('/fcm/unregister', [App\Http\Controllers\FcmController::class, 'unregister']);
-Route::post('/fcm/test', [App\Http\Controllers\FcmController::class, 'test']);
-Route::get('/fcm/tokens', [App\Http\Controllers\FcmController::class, 'tokens']);
+

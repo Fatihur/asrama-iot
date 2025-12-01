@@ -90,11 +90,6 @@ class RiwayatController extends Controller
             SirineLog::log('ON', 'AUTO', null, $riwayat->id, $validated['device_id'], 'Auto triggered by ' . $validated['event_type']);
         }
 
-        // Send push notifications for emergency
-        if ($isEmergency) {
-            $this->sendPushNotifications($riwayat);
-        }
-
         $this->sendNotifications($riwayat);
 
         return response()->json([
@@ -155,21 +150,6 @@ class RiwayatController extends Controller
         }
     }
 
-    protected function sendPushNotifications(Riwayat $riwayat): void
-    {
-        try {
-            $fcmService = new \App\Services\FcmService();
-            $fcmService->sendFireAlert([
-                'id' => $riwayat->id,
-                'event_type' => $riwayat->event_type,
-                'floor' => $riwayat->floor,
-                'device_id' => $riwayat->device_id,
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('FCM notification error: ' . $e->getMessage());
-        }
-    }
-
     public function storeSensor(Request $request)
     {
         $validated = $request->validate([
@@ -223,7 +203,6 @@ class RiwayatController extends Controller
         if ($isEmergency && $sirineMode !== 'OFF') {
             SirineLog::log('ON', 'AUTO', null, $riwayat->id, $validated['device_id'], "Auto triggered by {$eventType}");
             $this->sendNotifications($riwayat);
-            $this->sendPushNotifications($riwayat);
         }
 
         return response()->json([
@@ -289,7 +268,6 @@ class RiwayatController extends Controller
         }
 
         $this->sendNotifications($riwayat);
-        $this->sendPushNotifications($riwayat);
 
         return response()->json([
             'status' => 'success',
