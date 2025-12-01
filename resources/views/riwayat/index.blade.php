@@ -81,12 +81,10 @@
                             {{ $r->event_type === 'SMOKE' ? 'bg-gray-200 text-gray-800' : '' }}
                             {{ $r->event_type === 'FIRE' ? 'bg-orange-100 text-orange-800' : '' }}
                             {{ $r->event_type === 'FIRE ALARM' ? 'bg-red-100 text-red-800' : '' }}
-                            {{ $r->event_type === 'SOS' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                            {{ $r->event_type === 'SENSOR' ? 'bg-teal-100 text-teal-800' : '' }}
-                            {{ !in_array($r->event_type, ['SMOKE', 'FIRE', 'FIRE ALARM', 'SOS', 'SENSOR']) ? 'bg-gray-100 text-gray-800' : '' }}">
+                            {{ !in_array($r->event_type, ['SMOKE', 'FIRE', 'FIRE ALARM']) ? 'bg-gray-100 text-gray-800' : '' }}">
                             @if($r->event_type === 'SMOKE')<i class="fas fa-smog mr-1"></i>@endif
                             @if($r->event_type === 'FIRE')<i class="fas fa-fire mr-1"></i>@endif
-                            @if($r->event_type === 'FIRE ALARM')<i class="fas fa-fire-extinguisher mr-1"></i>@endif
+                            @if($r->event_type === 'FIRE ALARM')<i class="fas fa-bell mr-1"></i>@endif
                             {{ $r->event_type }}
                         </span>
                     </td>

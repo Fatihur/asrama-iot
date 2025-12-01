@@ -220,11 +220,7 @@ http.end();</code></pre>
                         @elseif($type === 'FIRE')
                             <i class="fas fa-fire text-orange-500"></i>
                         @elseif($type === 'FIRE ALARM')
-                            <i class="fas fa-fire-extinguisher text-red-600"></i>
-                        @elseif($type === 'SOS')
-                            <i class="fas fa-exclamation-triangle text-orange-500"></i>
-                        @elseif($type === 'SENSOR')
-                            <i class="fas fa-microchip text-teal-500"></i>
+                            <i class="fas fa-bell text-red-600"></i>
                         @else
                             <i class="fas fa-info-circle text-gray-500"></i>
                         @endif
@@ -300,9 +296,7 @@ http.end();</code></pre>
                                 {{ $event->event_type === 'SMOKE' ? 'bg-gray-200 text-gray-800' : '' }}
                                 {{ $event->event_type === 'FIRE' ? 'bg-orange-100 text-orange-800' : '' }}
                                 {{ $event->event_type === 'FIRE ALARM' ? 'bg-red-100 text-red-800' : '' }}
-                                {{ $event->event_type === 'SOS' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                {{ $event->event_type === 'SENSOR' ? 'bg-teal-100 text-teal-800' : '' }}
-                                {{ !in_array($event->event_type, ['SMOKE', 'FIRE', 'FIRE ALARM', 'SOS', 'SENSOR']) ? 'bg-gray-100 text-gray-800' : '' }}">
+                                {{ !in_array($event->event_type, ['SMOKE', 'FIRE', 'FIRE ALARM']) ? 'bg-gray-100 text-gray-800' : '' }}">
                                 {{ $event->event_type }}
                             </span>
                         </td>
