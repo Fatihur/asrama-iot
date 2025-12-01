@@ -112,32 +112,38 @@
     <!-- API Documentation -->
     <div class="bg-white rounded-lg shadow p-6 mb-8">
         <h3 class="text-lg font-medium text-gray-900 mb-4">
-            <i class="fas fa-code mr-2 text-indigo-600"></i>API Endpoints (ESP32)
+            <i class="fas fa-code mr-2 text-indigo-600"></i>API Endpoints (ESP32-CAM + MQ2 + Flame Sensor)
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             <div class="bg-gray-50 rounded p-3">
-                <code class="text-indigo-600 font-medium">POST /api/riwayat</code>
-                <p class="text-gray-500 mt-1">Kirim kejadian umum</p>
-            </div>
-            <div class="bg-gray-50 rounded p-3">
-                <code class="text-indigo-600 font-medium">POST /api/event</code>
-                <p class="text-gray-500 mt-1">Alias untuk /api/riwayat</p>
-            </div>
-            <div class="bg-gray-50 rounded p-3">
                 <code class="text-indigo-600 font-medium">POST /api/sensor</code>
-                <p class="text-gray-500 mt-1">Kirim data sensor (temp, humidity, smoke)</p>
+                <p class="text-gray-500 mt-1">Data MQ2 & Flame sensor</p>
+                <p class="text-xs text-gray-400 mt-1">mq2_value, mq2_ppm, flame_detected, flame_value</p>
             </div>
             <div class="bg-gray-50 rounded p-3">
                 <code class="text-indigo-600 font-medium">POST /api/fire</code>
-                <p class="text-gray-500 mt-1">Kirim event kebakaran (auto sirine)</p>
-            </div>
-            <div class="bg-gray-50 rounded p-3">
-                <code class="text-indigo-600 font-medium">POST /api/upload</code>
-                <p class="text-gray-500 mt-1">Upload gambar dari kamera</p>
+                <p class="text-gray-500 mt-1">Event api terdeteksi (auto sirine)</p>
+                <p class="text-xs text-gray-400 mt-1">flame_value, mq2_value</p>
             </div>
             <div class="bg-gray-50 rounded p-3">
                 <code class="text-indigo-600 font-medium">POST /api/capture</code>
-                <p class="text-gray-500 mt-1">Alias untuk upload gambar</p>
+                <p class="text-gray-500 mt-1">Upload gambar ESP32-CAM</p>
+                <p class="text-xs text-gray-400 mt-1">image (file), device_id, floor</p>
+            </div>
+            <div class="bg-gray-50 rounded p-3">
+                <code class="text-indigo-600 font-medium">POST /api/event</code>
+                <p class="text-gray-500 mt-1">Kirim event umum</p>
+                <p class="text-xs text-gray-400 mt-1">event_type: SMOKE, FLAME, SOS</p>
+            </div>
+            <div class="bg-gray-50 rounded p-3">
+                <code class="text-indigo-600 font-medium">GET /api/sirine</code>
+                <p class="text-gray-500 mt-1">Cek status sirine</p>
+                <p class="text-xs text-gray-400 mt-1">Response: ON / OFF / AUTO</p>
+            </div>
+            <div class="bg-gray-50 rounded p-3">
+                <code class="text-indigo-600 font-medium">POST /api/upload</code>
+                <p class="text-gray-500 mt-1">Alias upload gambar</p>
+                <p class="text-xs text-gray-400 mt-1">image (file) atau image_url</p>
             </div>
         </div>
     </div>
@@ -181,11 +187,13 @@
                 <div class="flex items-center justify-between">
                     <span class="flex items-center gap-2">
                         @if($type === 'SMOKE')
+                            <i class="fas fa-smog text-gray-600"></i>
+                        @elseif($type === 'FLAME' || $type === 'FIRE')
                             <i class="fas fa-fire text-red-500"></i>
                         @elseif($type === 'SOS')
                             <i class="fas fa-exclamation-triangle text-orange-500"></i>
-                        @elseif($type === 'MOTION')
-                            <i class="fas fa-walking text-blue-500"></i>
+                        @elseif($type === 'SENSOR')
+                            <i class="fas fa-microchip text-teal-500"></i>
                         @else
                             <i class="fas fa-info-circle text-gray-500"></i>
                         @endif
@@ -258,10 +266,11 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $event->floor }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
-                                {{ $event->event_type === 'SMOKE' ? 'bg-red-100 text-red-800' : '' }}
+                                {{ $event->event_type === 'SMOKE' ? 'bg-gray-200 text-gray-800' : '' }}
+                                {{ in_array($event->event_type, ['FLAME', 'FIRE']) ? 'bg-red-100 text-red-800' : '' }}
                                 {{ $event->event_type === 'SOS' ? 'bg-orange-100 text-orange-800' : '' }}
-                                {{ $event->event_type === 'MOTION' ? 'bg-blue-100 text-blue-800' : '' }}
-                                {{ !in_array($event->event_type, ['SMOKE', 'SOS', 'MOTION']) ? 'bg-gray-100 text-gray-800' : '' }}">
+                                {{ $event->event_type === 'SENSOR' ? 'bg-teal-100 text-teal-800' : '' }}
+                                {{ !in_array($event->event_type, ['SMOKE', 'FLAME', 'FIRE', 'SOS', 'SENSOR']) ? 'bg-gray-100 text-gray-800' : '' }}">
                                 {{ $event->event_type }}
                             </span>
                         </td>
@@ -471,11 +480,12 @@ function dashboardData() {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 },
                 body: JSON.stringify({
-                    device_id: 'TEST-SENSOR-001',
+                    device_id: 'ESP32-MQ2-001',
                     floor: 1,
-                    temperature: 25.5,
-                    humidity: 60,
-                    smoke: 50
+                    mq2_value: 150,
+                    mq2_ppm: 45,
+                    flame_detected: false,
+                    flame_value: 1000
                 })
             })
             .then(r => r.json())
@@ -507,9 +517,10 @@ function dashboardData() {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 },
                 body: JSON.stringify({
-                    device_id: 'TEST-FIRE-001',
+                    device_id: 'ESP32-FLAME-001',
                     floor: 1,
-                    value: 'Fire test from dashboard'
+                    flame_value: 100,
+                    value: 'Flame detected by IR sensor'
                 })
             })
             .then(r => r.json())
@@ -541,10 +552,11 @@ function dashboardData() {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 },
                 body: JSON.stringify({
-                    device_id: 'TEST-EVENT-001',
+                    device_id: 'ESP32-CAM-001',
                     floor: 1,
-                    event_type: 'MOTION',
-                    value: 'Test event from dashboard'
+                    event_type: 'SMOKE',
+                    mq2_value: 350,
+                    value: 'Smoke detected by MQ2 sensor'
                 })
             })
             .then(r => r.json())

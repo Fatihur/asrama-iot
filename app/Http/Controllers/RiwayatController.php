@@ -68,9 +68,11 @@ class RiwayatController extends Controller
             'event_type' => 'required|string|max:20',
             'value' => 'nullable|string|max:255',
             'image_url' => 'nullable|url|max:500',
+            'mq2_value' => 'nullable|numeric',
+            'flame_value' => 'nullable|numeric',
         ]);
 
-        $isEmergency = in_array(strtoupper($validated['event_type']), ['SMOKE', 'SOS']);
+        $isEmergency = in_array(strtoupper($validated['event_type']), ['SMOKE', 'FLAME', 'FIRE', 'SOS']);
         $sirineMode = Setting::getSirineMode();
 
         $riwayat = Riwayat::create([
@@ -154,31 +156,55 @@ class RiwayatController extends Controller
             'device_id' => 'required|string|max:50',
             'floor' => 'required|integer|min:1|max:100',
             'value' => 'nullable|string|max:255',
-            'temperature' => 'nullable|numeric',
-            'humidity' => 'nullable|numeric',
-            'smoke' => 'nullable|numeric',
+            'mq2_value' => 'nullable|numeric',
+            'mq2_ppm' => 'nullable|numeric',
+            'flame_detected' => 'nullable|boolean',
+            'flame_value' => 'nullable|numeric',
         ]);
 
+        $mq2Value = $validated['mq2_value'] ?? null;
+        $flameDetected = $validated['flame_detected'] ?? false;
+        
         $value = $validated['value'] ?? json_encode([
-            'temperature' => $validated['temperature'] ?? null,
-            'humidity' => $validated['humidity'] ?? null,
-            'smoke' => $validated['smoke'] ?? null,
+            'mq2_value' => $mq2Value,
+            'mq2_ppm' => $validated['mq2_ppm'] ?? null,
+            'flame_detected' => $flameDetected,
+            'flame_value' => $validated['flame_value'] ?? null,
         ]);
+
+        $smokeThreshold = 300;
+        $isSmoke = $mq2Value !== null && $mq2Value > $smokeThreshold;
+        $isFlame = $flameDetected;
+        $isEmergency = $isSmoke || $isFlame;
+        
+        $eventType = 'SENSOR';
+        if ($isSmoke) $eventType = 'SMOKE';
+        if ($isFlame) $eventType = 'FLAME';
+
+        $sirineMode = Setting::getSirineMode();
+        $sirineStatus = ($isEmergency && $sirineMode !== 'OFF') ? 'ON' : 'OFF';
 
         $riwayat = Riwayat::create([
             'device_id' => $validated['device_id'],
             'floor' => $validated['floor'],
-            'event_type' => 'SENSOR',
+            'event_type' => $eventType,
             'value' => $value,
-            'notif_channel' => 'API',
-            'sirine_status' => 'OFF',
+            'notif_channel' => $isEmergency ? 'WEB, API' : 'API',
+            'sirine_status' => $sirineStatus,
             'timestamp' => now(),
         ]);
+
+        if ($isEmergency && $sirineMode !== 'OFF') {
+            SirineLog::log('ON', 'AUTO', null, $riwayat->id, $validated['device_id'], "Auto triggered by {$eventType}");
+            $this->sendNotifications($riwayat);
+        }
 
         return response()->json([
             'status' => 'success',
             'message' => 'Data sensor berhasil disimpan',
             'data' => $riwayat,
+            'emergency' => $isEmergency,
+            'sirine' => $sirineStatus,
         ], 201);
     }
 
@@ -209,15 +235,22 @@ class RiwayatController extends Controller
             'floor' => 'required|integer|min:1|max:100',
             'value' => 'nullable|string|max:255',
             'image_url' => 'nullable|url|max:500',
+            'flame_value' => 'nullable|numeric',
+            'mq2_value' => 'nullable|numeric',
         ]);
 
         $sirineMode = Setting::getSirineMode();
+        
+        $sensorData = json_encode([
+            'flame_value' => $validated['flame_value'] ?? null,
+            'mq2_value' => $validated['mq2_value'] ?? null,
+        ]);
 
         $riwayat = Riwayat::create([
             'device_id' => $validated['device_id'],
             'floor' => $validated['floor'],
-            'event_type' => 'FIRE',
-            'value' => $validated['value'] ?? 'Fire detected',
+            'event_type' => 'FLAME',
+            'value' => $validated['value'] ?? $sensorData,
             'image_url' => $validated['image_url'] ?? null,
             'notif_channel' => 'WEB, API',
             'sirine_status' => $sirineMode !== 'OFF' ? 'ON' : 'OFF',
@@ -225,14 +258,14 @@ class RiwayatController extends Controller
         ]);
 
         if ($sirineMode !== 'OFF') {
-            SirineLog::log('ON', 'AUTO', null, $riwayat->id, $validated['device_id'], 'Auto triggered by FIRE');
+            SirineLog::log('ON', 'AUTO', null, $riwayat->id, $validated['device_id'], 'Auto triggered by FLAME sensor');
         }
 
         $this->sendNotifications($riwayat);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Fire event berhasil disimpan',
+            'message' => 'Flame event berhasil disimpan',
             'data' => $riwayat,
             'sirine' => $riwayat->sirine_status,
         ], 201);
@@ -240,7 +273,7 @@ class RiwayatController extends Controller
 
     public function getFireEvents(Request $request)
     {
-        $query = Riwayat::where('event_type', 'FIRE');
+        $query = Riwayat::whereIn('event_type', ['FLAME', 'FIRE']);
 
         if ($request->filled('device_id')) {
             $query->where('device_id', $request->device_id);

@@ -78,10 +78,13 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $r->floor }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
-                            {{ $r->event_type === 'SMOKE' ? 'bg-red-100 text-red-800' : '' }}
+                            {{ $r->event_type === 'SMOKE' ? 'bg-gray-200 text-gray-800' : '' }}
+                            {{ in_array($r->event_type, ['FLAME', 'FIRE']) ? 'bg-red-100 text-red-800' : '' }}
                             {{ $r->event_type === 'SOS' ? 'bg-orange-100 text-orange-800' : '' }}
-                            {{ $r->event_type === 'MOTION' ? 'bg-blue-100 text-blue-800' : '' }}
-                            {{ !in_array($r->event_type, ['SMOKE', 'SOS', 'MOTION']) ? 'bg-gray-100 text-gray-800' : '' }}">
+                            {{ $r->event_type === 'SENSOR' ? 'bg-teal-100 text-teal-800' : '' }}
+                            {{ !in_array($r->event_type, ['SMOKE', 'FLAME', 'FIRE', 'SOS', 'SENSOR']) ? 'bg-gray-100 text-gray-800' : '' }}">
+                            @if($r->event_type === 'SMOKE')<i class="fas fa-smog mr-1"></i>@endif
+                            @if(in_array($r->event_type, ['FLAME', 'FIRE']))<i class="fas fa-fire mr-1"></i>@endif
                             {{ $r->event_type }}
                         </span>
                     </td>
