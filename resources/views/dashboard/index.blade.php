@@ -25,12 +25,49 @@
         </div>
     </div>
 
+    <!-- Notification Permission Banner -->
+    <div id="notification-banner" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 hidden">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <i class="fas fa-bell text-yellow-400 mr-3"></i>
+                <p class="text-sm text-yellow-700">
+                    <strong>Aktifkan Notifikasi</strong> untuk menerima alert kebakaran dengan suara keras!
+                </p>
+            </div>
+            <button onclick="requestNotificationPermission()" class="bg-yellow-400 text-yellow-800 px-4 py-2 rounded-md text-sm font-semibold hover:bg-yellow-500">
+                <i class="fas fa-bell mr-1"></i> Aktifkan
+            </button>
+        </div>
+    </div>
+    <script>
+        if ('Notification' in window && Notification.permission === 'default') {
+            document.getElementById('notification-banner').classList.remove('hidden');
+        }
+        function requestNotificationPermission() {
+            Notification.requestPermission().then(p => {
+                if (p === 'granted') {
+                    document.getElementById('notification-banner').classList.add('hidden');
+                    alert('Notifikasi berhasil diaktifkan!');
+                }
+            });
+        }
+    </script>
+
     <!-- Test Panel -->
     <div class="bg-white rounded-lg shadow p-6 mb-8">
         <h3 class="text-lg font-medium text-gray-900 mb-4">
             <i class="fas fa-flask mr-2 text-indigo-600"></i>Panel Tes
         </h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Test Alarm -->
+            <div class="border rounded-lg p-4 border-red-200 bg-red-50">
+                <h4 class="font-medium text-red-700 mb-2">🚨 Tes Alarm</h4>
+                <p class="text-sm text-red-600 mb-3">Test push notification + suara keras</p>
+                <button onclick="AlarmSystem.test()"
+                    class="w-full rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500">
+                    <i class="fas fa-volume-up mr-2"></i>Tes Alarm
+                </button>
+            </div>
             <!-- Test Sirine -->
             <div class="border rounded-lg p-4">
                 <h4 class="font-medium text-gray-700 mb-2">Tes Sirine</h4>

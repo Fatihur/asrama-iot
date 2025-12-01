@@ -15,9 +15,14 @@
         [x-cloak] { display: none !important; }
         .animate-pulse-fast { animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     </style>
+    <script src="/js/notification.js" defer></script>
     @stack('styles')
 </head>
 <body class="h-full" x-data="{ sidebarOpen: false }">
+    <!-- Hidden audio element for fallback alarm -->
+    <audio id="alarm-audio" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZeXk42Gg4OHjpaeoqGdlIuEgYSMmKKpq6eglI2IiI2WoKirrKifjYOBg4uXo6urrquhlYqFhoyYpKqtq6qjmI2Hh4yWoqutrauonpOKh4mRnKWrra2ropiNiIqPmaSrrq6spZqPi4yRnaWsr66so5mPi4yTn6arrrCuqZ2Sj42Sn6errrCvq6CUkI+Tn6irrrCwrKKXkZCUoKmtr7Cvq6KXkpGVoamtsLGwrKOYk5KWoqqtsLGwraWalJOXpKuusbKxr6eblZWYpayvsrOyr6mdl5aZp62ws7OzsKugnJeaq66xtLS0sq2hnpmbrq+xtbW1s6+jn5qdrrCytba2tLGloZ6erbGztba3trOoo6CfrrG0tre4t7WqpaGhsLK1uLi4t7WsqKOjsrO2ubm5uLevq6WktLW3urq6uru0raansLa4u7u8vLy4sKyotri6vL2+vr25s66pubq7vr6/v767trCxu7y+wMDAwL+9uLK0vL3AwcLCwsHAu7W4vcDCw8PExMS/vLi6wMHDxMXFxcXCvry+wcPFxsbGxsbFwb7AwsPGx8jIyMjGw8DCxMbHycnJycnIxcPFx8jKysvLy8vJxsXHycrLzMzMzMvKyMfJy8zNzs7Ozs3LycnLzM7P0NDQ0M/NzMvNz9DR0tLS0tHPzc3P0dLT1NTU1NPS0NDR09TW1tbW1tbU09LT1dbY2NjY2NfW1NTV19ja2tra2tnY1tbY2drb3Nzc3NzbGRoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa" type="audio/wav">
+    </audio>
     <div class="min-h-full">
         <!-- Sidebar Mobile -->
         <div x-show="sidebarOpen" class="relative z-50 lg:hidden" x-cloak>
