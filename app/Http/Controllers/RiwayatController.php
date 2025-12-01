@@ -72,7 +72,7 @@ class RiwayatController extends Controller
             'flame_value' => 'nullable|numeric',
         ]);
 
-        $isEmergency = in_array(strtoupper($validated['event_type']), ['SMOKE', 'FLAME', 'FIRE', 'SOS']);
+        $isEmergency = in_array(strtoupper($validated['event_type']), ['SMOKE', 'FIRE', 'FIRE ALARM', 'SOS']);
         $sirineMode = Setting::getSirineMode();
 
         $riwayat = Riwayat::create([
@@ -178,8 +178,13 @@ class RiwayatController extends Controller
         $isEmergency = $isSmoke || $isFlame;
         
         $eventType = 'SENSOR';
-        if ($isSmoke) $eventType = 'SMOKE';
-        if ($isFlame) $eventType = 'FLAME';
+        if ($isSmoke && $isFlame) {
+            $eventType = 'FIRE ALARM';
+        } elseif ($isFlame) {
+            $eventType = 'FIRE';
+        } elseif ($isSmoke) {
+            $eventType = 'SMOKE';
+        }
 
         $sirineMode = Setting::getSirineMode();
         $sirineStatus = ($isEmergency && $sirineMode !== 'OFF') ? 'ON' : 'OFF';
@@ -249,7 +254,7 @@ class RiwayatController extends Controller
         $riwayat = Riwayat::create([
             'device_id' => $validated['device_id'],
             'floor' => $validated['floor'],
-            'event_type' => 'FLAME',
+            'event_type' => 'FIRE',
             'value' => $validated['value'] ?? $sensorData,
             'image_url' => $validated['image_url'] ?? null,
             'notif_channel' => 'WEB, API',
@@ -258,7 +263,7 @@ class RiwayatController extends Controller
         ]);
 
         if ($sirineMode !== 'OFF') {
-            SirineLog::log('ON', 'AUTO', null, $riwayat->id, $validated['device_id'], 'Auto triggered by FLAME sensor');
+            SirineLog::log('ON', 'AUTO', null, $riwayat->id, $validated['device_id'], 'Auto triggered by FIRE sensor');
         }
 
         $this->sendNotifications($riwayat);

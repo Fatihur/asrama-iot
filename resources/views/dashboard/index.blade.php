@@ -217,8 +217,10 @@ http.end();</code></pre>
                     <span class="flex items-center gap-2">
                         @if($type === 'SMOKE')
                             <i class="fas fa-smog text-gray-600"></i>
-                        @elseif($type === 'FLAME' || $type === 'FIRE')
-                            <i class="fas fa-fire text-red-500"></i>
+                        @elseif($type === 'FIRE')
+                            <i class="fas fa-fire text-orange-500"></i>
+                        @elseif($type === 'FIRE ALARM')
+                            <i class="fas fa-fire-extinguisher text-red-600"></i>
                         @elseif($type === 'SOS')
                             <i class="fas fa-exclamation-triangle text-orange-500"></i>
                         @elseif($type === 'SENSOR')
@@ -296,10 +298,11 @@ http.end();</code></pre>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
                                 {{ $event->event_type === 'SMOKE' ? 'bg-gray-200 text-gray-800' : '' }}
-                                {{ in_array($event->event_type, ['FLAME', 'FIRE']) ? 'bg-red-100 text-red-800' : '' }}
-                                {{ $event->event_type === 'SOS' ? 'bg-orange-100 text-orange-800' : '' }}
+                                {{ $event->event_type === 'FIRE' ? 'bg-orange-100 text-orange-800' : '' }}
+                                {{ $event->event_type === 'FIRE ALARM' ? 'bg-red-100 text-red-800' : '' }}
+                                {{ $event->event_type === 'SOS' ? 'bg-yellow-100 text-yellow-800' : '' }}
                                 {{ $event->event_type === 'SENSOR' ? 'bg-teal-100 text-teal-800' : '' }}
-                                {{ !in_array($event->event_type, ['SMOKE', 'FLAME', 'FIRE', 'SOS', 'SENSOR']) ? 'bg-gray-100 text-gray-800' : '' }}">
+                                {{ !in_array($event->event_type, ['SMOKE', 'FIRE', 'FIRE ALARM', 'SOS', 'SENSOR']) ? 'bg-gray-100 text-gray-800' : '' }}">
                                 {{ $event->event_type }}
                             </span>
                         </td>

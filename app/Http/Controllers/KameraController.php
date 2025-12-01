@@ -53,9 +53,10 @@ class KameraController extends Controller
 
         if (!$latest) {
             return response()->json([
-                'status' => 'error',
+                'status' => 'empty',
                 'message' => 'Tidak ada gambar',
-            ], 404);
+                'data' => null,
+            ]);
         }
 
         return response()->json([
