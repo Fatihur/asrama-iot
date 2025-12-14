@@ -92,27 +92,51 @@
                             {{ $r->event_type }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                    <td class="px-6 py-4 text-sm text-gray-500">
                         @php
                             $value = $r->value ?? '-';
-                            $jsonData = json_decode($value, true);
+                            $jsonData = is_string($value) ? json_decode($value, true) : (is_array($value) ? $value : null);
                         @endphp
                         @if($jsonData && is_array($jsonData))
-                            <div class="text-xs">
-                                @if(isset($jsonData['mq2_value']))
-                                    <span class="inline-block bg-gray-100 rounded px-1 mr-1">MQ2: {{ $jsonData['mq2_value'] }}</span>
-                                @endif
-                                @if(isset($jsonData['mq2_ppm']))
-                                    <span class="inline-block bg-gray-100 rounded px-1 mr-1">PPM: {{ $jsonData['mq2_ppm'] }}</span>
-                                @endif
-                                @if(isset($jsonData['flame_detected']))
-                                    <span class="inline-block {{ $jsonData['flame_detected'] ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }} rounded px-1">
-                                        Api: {{ $jsonData['flame_detected'] ? 'Ya' : 'Tidak' }}
+                            <div class="space-y-1">
+                                @if(isset($jsonData['mq2_value']) || isset($jsonData['mq2_ppm']))
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-smog text-gray-400 w-4"></i>
+                                    <span class="text-xs">
+                                        @if(isset($jsonData['mq2_value']))
+                                            <span class="inline-flex items-center bg-gray-100 rounded px-2 py-0.5">
+                                                MQ2: <strong class="ml-1">{{ $jsonData['mq2_value'] }}</strong>
+                                            </span>
+                                        @endif
+                                        @if(isset($jsonData['mq2_ppm']))
+                                            <span class="inline-flex items-center bg-blue-50 text-blue-700 rounded px-2 py-0.5 ml-1">
+                                                {{ $jsonData['mq2_ppm'] }} PPM
+                                            </span>
+                                        @endif
                                     </span>
+                                </div>
+                                @endif
+                                @if(isset($jsonData['flame_detected']) || isset($jsonData['flame_value']))
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-fire-alt {{ isset($jsonData['flame_detected']) && $jsonData['flame_detected'] ? 'text-red-500' : 'text-gray-400' }} w-4"></i>
+                                    <span class="text-xs">
+                                        @if(isset($jsonData['flame_detected']))
+                                            <span class="inline-flex items-center {{ $jsonData['flame_detected'] ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }} rounded px-2 py-0.5">
+                                                <i class="fas {{ $jsonData['flame_detected'] ? 'fa-exclamation-triangle' : 'fa-check' }} mr-1"></i>
+                                                {{ $jsonData['flame_detected'] ? 'Api Terdeteksi' : 'Aman' }}
+                                            </span>
+                                        @endif
+                                        @if(isset($jsonData['flame_value']))
+                                            <span class="inline-flex items-center bg-gray-100 rounded px-2 py-0.5 ml-1">
+                                                Nilai: {{ $jsonData['flame_value'] }}
+                                            </span>
+                                        @endif
+                                    </span>
+                                </div>
                                 @endif
                             </div>
                         @else
-                            {{ Str::limit($value, 30) }}
+                            {{ $value !== '-' ? Str::limit($value, 50) : '-' }}
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
