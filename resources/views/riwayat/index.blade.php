@@ -96,6 +96,7 @@
                         @php
                             $value = $r->value ?? '-';
                             $jsonData = is_string($value) ? json_decode($value, true) : (is_array($value) ? $value : null);
+                            $numericValue = is_numeric($value) ? (int)$value : null;
                         @endphp
                         @if($jsonData && is_array($jsonData))
                             <div class="space-y-1">
@@ -134,6 +135,46 @@
                                     </span>
                                 </div>
                                 @endif
+                            </div>
+                        @elseif($numericValue !== null && $r->event_type === 'SMOKE')
+                            @php
+                                $smokeLevel = $numericValue >= 3000 ? 'Tinggi' : ($numericValue >= 1500 ? 'Sedang' : 'Rendah');
+                                $smokeColor = $numericValue >= 3000 ? 'bg-red-100 text-red-700' : ($numericValue >= 1500 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700');
+                            @endphp
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-smog {{ $numericValue >= 3000 ? 'text-red-500' : ($numericValue >= 1500 ? 'text-yellow-500' : 'text-gray-400') }}"></i>
+                                <div class="text-xs space-y-1">
+                                    <span class="inline-flex items-center {{ $smokeColor }} rounded px-2 py-0.5">
+                                        <i class="fas {{ $numericValue >= 3000 ? 'fa-exclamation-triangle' : ($numericValue >= 1500 ? 'fa-exclamation' : 'fa-check') }} mr-1"></i>
+                                        {{ $smokeLevel }}
+                                    </span>
+                                    <span class="inline-flex items-center bg-gray-100 rounded px-2 py-0.5 ml-1">
+                                        Nilai: <strong class="ml-1">{{ number_format($numericValue) }}</strong>
+                                    </span>
+                                </div>
+                            </div>
+                        @elseif($numericValue !== null && $r->event_type === 'FLAME')
+                            @php
+                                $flameDetected = $numericValue < 500;
+                            @endphp
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-fire-alt {{ $flameDetected ? 'text-red-500' : 'text-gray-400' }}"></i>
+                                <div class="text-xs">
+                                    <span class="inline-flex items-center {{ $flameDetected ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }} rounded px-2 py-0.5">
+                                        <i class="fas {{ $flameDetected ? 'fa-exclamation-triangle' : 'fa-check' }} mr-1"></i>
+                                        {{ $flameDetected ? 'Api Terdeteksi' : 'Aman' }}
+                                    </span>
+                                    <span class="inline-flex items-center bg-gray-100 rounded px-2 py-0.5 ml-1">
+                                        Nilai: <strong class="ml-1">{{ number_format($numericValue) }}</strong>
+                                    </span>
+                                </div>
+                            </div>
+                        @elseif($numericValue !== null)
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-chart-line text-gray-400"></i>
+                                <span class="inline-flex items-center bg-gray-100 rounded px-2 py-0.5 text-xs">
+                                    Nilai: <strong class="ml-1">{{ number_format($numericValue) }}</strong>
+                                </span>
                             </div>
                         @else
                             {{ $value !== '-' ? Str::limit($value, 50) : '-' }}
