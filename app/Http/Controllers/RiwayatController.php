@@ -14,7 +14,8 @@ class RiwayatController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Riwayat::select('id', 'device_id', 'floor', 'event_type', 'value', 'sirine_status', 'ack_status', 'resolve_status', 'timestamp');
+        $query = Riwayat::select('id', 'device_id', 'floor', 'event_type', 'value', 'sirine_status', 'ack_status', 'resolve_status', 'timestamp')
+            ->whereIn('event_type', ['SMOKE', 'FIRE']);
 
         if ($request->filled('event_type')) {
             $query->where('event_type', $request->event_type);
@@ -34,7 +35,7 @@ class RiwayatController extends Controller
 
         $riwayat = $query->orderBy('timestamp', 'desc')->paginate(20);
 
-        $eventTypes = Cache::remember('event_types', 300, fn() => Riwayat::distinct()->pluck('event_type'));
+        $eventTypes = ['SMOKE', 'FIRE'];
         $floors = Cache::remember('floors', 300, fn() => Riwayat::distinct()->pluck('floor')->sort());
 
         return view('riwayat.index', compact('riwayat', 'eventTypes', 'floors'));
