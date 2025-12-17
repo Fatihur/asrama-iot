@@ -248,16 +248,14 @@ class RiwayatController extends Controller
 
         $sirineMode = Setting::getSirineMode();
         
-        $sensorData = json_encode([
-            'flame_value' => $validated['flame_value'] ?? null,
-            'mq2_value' => $validated['mq2_value'] ?? null,
-        ]);
+        // Prioritas: flame_value > value (angka)
+        $flameValue = $validated['flame_value'] ?? $validated['value'] ?? null;
 
         $riwayat = Riwayat::create([
             'device_id' => $validated['device_id'],
             'floor' => $validated['floor'],
             'event_type' => 'FIRE',
-            'value' => $validated['value'] ?? $sensorData,
+            'value' => $flameValue,
             'image_url' => $validated['image_url'] ?? null,
             'notif_channel' => 'WEB, API',
             'sirine_status' => $sirineMode !== 'OFF' ? 'ON' : 'OFF',
