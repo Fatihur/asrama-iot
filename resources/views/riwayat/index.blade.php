@@ -74,21 +74,15 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {{ $r->timestamp->format('d/m/Y H:i:s') }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $r->device_id }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">ESP32 Main</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $r->floor }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
                             {{ $r->event_type === 'SMOKE' ? 'bg-gray-200 text-gray-800' : '' }}
-                            {{ $r->event_type === 'FLAME' ? 'bg-orange-100 text-orange-800' : '' }}
                             {{ $r->event_type === 'FIRE' ? 'bg-red-100 text-red-800' : '' }}
-                            {{ $r->event_type === 'FIRE ALARM' ? 'bg-red-100 text-red-800' : '' }}
-                            {{ $r->event_type === 'SENSOR' ? 'bg-blue-100 text-blue-800' : '' }}
-                            {{ !in_array($r->event_type, ['SMOKE', 'FLAME', 'FIRE', 'FIRE ALARM', 'SENSOR']) ? 'bg-gray-100 text-gray-800' : '' }}">
+                            {{ !in_array($r->event_type, ['SMOKE', 'FIRE']) ? 'bg-gray-100 text-gray-800' : '' }}">
                             @if($r->event_type === 'SMOKE')<i class="fas fa-smog mr-1"></i>@endif
-                            @if($r->event_type === 'FLAME')<i class="fas fa-fire-alt mr-1 text-orange-500"></i>@endif
                             @if($r->event_type === 'FIRE')<i class="fas fa-fire mr-1"></i>@endif
-                            @if($r->event_type === 'FIRE ALARM')<i class="fas fa-bell mr-1"></i>@endif
-                            @if($r->event_type === 'SENSOR')<i class="fas fa-microchip mr-1"></i>@endif
                             {{ $r->event_type }}
                         </span>
                     </td>
