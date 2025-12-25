@@ -77,6 +77,7 @@ class KameraController extends Controller
             'imageFile' => 'nullable|max:5120',
             'riwayat_id' => 'nullable|exists:riwayat,id',
             'type' => 'nullable|in:SCHEDULED,EVENT,MANUAL',
+            'captured_at' => 'nullable|date',
         ]);
 
         $imageUrl = $validated['image_url'] ?? null;
@@ -110,15 +111,44 @@ class KameraController extends Controller
             ], 400);
         }
 
+        // Tentukan captured_at: prioritas dari request > riwayat > now
+        $capturedAt = $validated['captured_at'] ?? null;
+        $riwayatId = $validated['riwayat_id'] ?? null;
+        
+        // Jika tidak ada riwayat_id, cari event terakhir dalam 30 detik terakhir dari device yang sama
+        if (!$riwayatId) {
+            $deviceId = $validated['device_id'] ?? $request->header('X-Device-ID', 'ESP32-CAM');
+            $floor = $validated['floor'] ?? $request->header('X-Floor', 1);
+            
+            $recentEvent = \App\Models\Riwayat::where('floor', $floor)
+                ->whereIn('event_type', ['FIRE', 'SMOKE', 'FLAME'])
+                ->where('timestamp', '>=', now()->subSeconds(30))
+                ->orderBy('timestamp', 'desc')
+                ->first();
+            
+            if ($recentEvent) {
+                $riwayatId = $recentEvent->id;
+                $capturedAt = $capturedAt ?? $recentEvent->timestamp;
+            }
+        }
+        
+        // Jika ada riwayat_id tapi belum ada captured_at, ambil dari riwayat
+        if (!$capturedAt && $riwayatId) {
+            $riwayat = \App\Models\Riwayat::find($riwayatId);
+            $capturedAt = $riwayat?->timestamp;
+        }
+        
+        $capturedAt = $capturedAt ?? now();
+
         $kamera = Kamera::create([
             'device_id' => $validated['device_id'] ?? $request->header('X-Device-ID', 'ESP32-CAM'),
             'floor' => $validated['floor'] ?? $request->header('X-Floor', 1),
             'lokasi' => $validated['lokasi'] ?? null,
             'image_url' => $imageUrl,
             'image_path' => $imagePath,
-            'riwayat_id' => $validated['riwayat_id'] ?? null,
+            'riwayat_id' => $riwayatId,
             'type' => $validated['type'] ?? 'EVENT',
-            'captured_at' => now(),
+            'captured_at' => $capturedAt,
         ]);
 
         return response()->json([
