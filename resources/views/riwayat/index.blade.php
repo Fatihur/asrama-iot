@@ -147,13 +147,16 @@
                                     </span>
                                 </div>
                             </div>
-                        @elseif($numericValue !== null && in_array($r->event_type, ['FLAME', 'FIRE']))
+                        @elseif($numericValue !== null && $r->event_type === 'FLAME')
+                            @php
+                                $flameDetected = $numericValue < 500;
+                            @endphp
                             <div class="flex items-center gap-2">
-                                <i class="fas fa-fire text-red-500"></i>
+                                <i class="fas fa-fire-alt {{ $flameDetected ? 'text-red-500' : 'text-gray-400' }}"></i>
                                 <div class="text-xs">
-                                    <span class="inline-flex items-center bg-red-100 text-red-700 rounded px-2 py-0.5">
-                                        <i class="fas fa-exclamation-triangle mr-1"></i>
-                                        Api Terdeteksi
+                                    <span class="inline-flex items-center {{ $flameDetected ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }} rounded px-2 py-0.5">
+                                        <i class="fas {{ $flameDetected ? 'fa-exclamation-triangle' : 'fa-check' }} mr-1"></i>
+                                        {{ $flameDetected ? 'Api Terdeteksi' : 'Aman' }}
                                     </span>
                                     <span class="inline-flex items-center bg-gray-100 rounded px-2 py-0.5 ml-1">
                                         Nilai: <strong class="ml-1">{{ number_format($numericValue) }}</strong>
@@ -166,19 +169,6 @@
                                 <span class="inline-flex items-center bg-gray-100 rounded px-2 py-0.5 text-xs">
                                     Nilai: <strong class="ml-1">{{ number_format($numericValue) }}</strong>
                                 </span>
-                            </div>
-                        @elseif($r->event_type === 'FIRE')
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-fire text-red-500"></i>
-                                <div class="text-xs">
-                                    <span class="inline-flex items-center bg-red-100 text-red-700 rounded px-2 py-0.5">
-                                        <i class="fas fa-exclamation-triangle mr-1"></i>
-                                        Api Terdeteksi
-                                    </span>
-                                    <span class="inline-flex items-center bg-gray-100 rounded px-2 py-0.5 ml-1">
-                                        Nilai: <strong class="ml-1">{{ $value }}</strong>
-                                    </span>
-                                </div>
                             </div>
                         @else
                             {{ $value !== '-' ? Str::limit($value, 50) : '-' }}
