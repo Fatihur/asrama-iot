@@ -20,15 +20,8 @@ class SirineController extends Controller
 
     public function getStatus()
     {
-        // Bypass cache - get fresh data directly from DB
-        $setting = Setting::where('key', 'sirine_mode')->first();
-        $mode = $setting ? $setting->value : 'AUTO';
-        
-        return response($mode, 200)
-            ->header('Content-Type', 'text/plain')
-            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
-            ->header('Pragma', 'no-cache')
-            ->header('Expires', '0');
+        return response(Setting::getSirineMode(), 200)
+            ->header('Content-Type', 'text/plain');
     }
 
     public function setStatus(Request $request)
@@ -39,9 +32,6 @@ class SirineController extends Controller
 
         $status = strtoupper($validated['status']);
         Setting::setSirineMode($status);
-        
-        // Clear cache explicitly to ensure fresh data
-        \Illuminate\Support\Facades\Cache::forget('setting.sirine_mode');
 
         SirineLog::log(
             $status,
@@ -52,13 +42,10 @@ class SirineController extends Controller
             $request->input('note', 'Status changed via ' . ($request->has('device_id') ? 'API' : 'Web'))
         );
 
-        // Return the actual saved value from DB
-        $savedMode = Setting::where('key', 'sirine_mode')->first()?->value ?? $status;
-        
         return response()->json([
             'status' => 'success',
             'message' => 'Status sirine diperbarui',
-            'current_status' => $savedMode,
+            'current_status' => $status,
         ]);
     }
 
