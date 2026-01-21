@@ -7,8 +7,10 @@ use App\Models\Distribusi;
 use App\Models\Kontak;
 use App\Models\Setting;
 use App\Models\SirineLog;
+use App\Models\Kamera;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class RiwayatController extends Controller
 {
@@ -68,26 +70,54 @@ class RiwayatController extends Controller
             'event_type' => 'required|string|max:20',
             'value' => 'nullable|string|max:255',
             'image_url' => 'nullable|url|max:500',
+            'image' => 'nullable|max:5120',
             'mq2_value' => 'nullable|numeric',
             'flame_value' => 'nullable|numeric',
         ]);
 
-        $isEmergency = in_array(strtoupper($validated['event_type']), ['SMOKE', 'FLAME', 'FIRE', 'FIRE ALARM']);
+        $eventType = strtoupper($validated['event_type']);
+        $isEmergency = in_array($eventType, ['SMOKE', 'FLAME', 'FIRE', 'FIRE ALARM']);
         $sirineMode = Setting::getSirineMode();
+
+        // Handle image upload
+        $imageUrl = $validated['image_url'] ?? null;
+        $imagePath = null;
+        
+        $imageFile = $request->file('image');
+        if ($imageFile) {
+            $filename = 'esp32_' . date('Ymd_His') . '_' . uniqid() . '.' . ($imageFile->getClientOriginalExtension() ?: 'jpg');
+            $path = $imageFile->storeAs('kamera', $filename, 'public');
+            $imageUrl = Storage::url($path);
+            $imagePath = $path;
+        }
 
         $riwayat = Riwayat::create([
             'device_id' => $validated['device_id'],
             'floor' => $validated['floor'],
-            'event_type' => strtoupper($validated['event_type']),
+            'event_type' => $eventType,
             'value' => $validated['value'] ?? null,
-            'image_url' => $validated['image_url'] ?? null,
+            'image_url' => $imageUrl,
             'notif_channel' => 'WEB, API',
             'sirine_status' => ($isEmergency && $sirineMode !== 'OFF') ? 'ON' : 'OFF',
             'timestamp' => now(),
         ]);
 
+        // Save to kamera table if there's an image and it's an emergency event
+        if ($imageUrl && in_array($eventType, ['SMOKE', 'FIRE', 'FLAME'])) {
+            Kamera::create([
+                'device_id' => $validated['device_id'],
+                'floor' => $validated['floor'],
+                'image_url' => $imageUrl,
+                'image_path' => $imagePath,
+                'riwayat_id' => $riwayat->id,
+                'type' => 'EVENT',
+                'event_type' => in_array($eventType, ['FIRE', 'FLAME']) ? 'FIRE' : 'SMOKE',
+                'captured_at' => now(),
+            ]);
+        }
+
         if ($isEmergency && $sirineMode !== 'OFF') {
-            SirineLog::log('ON', 'AUTO', null, $riwayat->id, $validated['device_id'], 'Auto triggered by ' . $validated['event_type']);
+            SirineLog::log('ON', 'AUTO', null, $riwayat->id, $validated['device_id'], 'Auto triggered by ' . $eventType);
         }
 
         $this->sendNotifications($riwayat);
@@ -156,6 +186,7 @@ class RiwayatController extends Controller
             'device_id' => 'required|string|max:50',
             'floor' => 'required|integer|min:1|max:100',
             'value' => 'nullable|string|max:255',
+            'image' => 'nullable|max:5120',
             'mq2_value' => 'nullable|numeric',
             'mq2_ppm' => 'nullable|numeric',
             'flame_detected' => 'nullable|boolean',
@@ -178,13 +209,25 @@ class RiwayatController extends Controller
         $isEmergency = $isSmoke || $isFlame;
         
         if ($isSmoke && $isFlame) {
-            $eventType = 'SENSOR';
+            $eventType = 'FIRE';
         } elseif ($isFlame) {
-            $eventType = 'FLAME';
+            $eventType = 'FIRE';
         } elseif ($isSmoke) {
             $eventType = 'SMOKE';
         } else {
             $eventType = 'SENSOR';
+        }
+
+        // Handle image upload
+        $imageUrl = null;
+        $imagePath = null;
+        
+        $imageFile = $request->file('image');
+        if ($imageFile) {
+            $filename = 'esp32_' . date('Ymd_His') . '_' . uniqid() . '.' . ($imageFile->getClientOriginalExtension() ?: 'jpg');
+            $path = $imageFile->storeAs('kamera', $filename, 'public');
+            $imageUrl = Storage::url($path);
+            $imagePath = $path;
         }
 
         $sirineMode = Setting::getSirineMode();
@@ -195,10 +238,25 @@ class RiwayatController extends Controller
             'floor' => $validated['floor'],
             'event_type' => $eventType,
             'value' => $value,
+            'image_url' => $imageUrl,
             'notif_channel' => $isEmergency ? 'WEB, API' : 'API',
             'sirine_status' => $sirineStatus,
             'timestamp' => now(),
         ]);
+
+        // Save to kamera table if there's an image and it's an emergency event
+        if ($imageUrl && in_array($eventType, ['SMOKE', 'FIRE'])) {
+            Kamera::create([
+                'device_id' => $validated['device_id'],
+                'floor' => $validated['floor'],
+                'image_url' => $imageUrl,
+                'image_path' => $imagePath,
+                'riwayat_id' => $riwayat->id,
+                'type' => 'EVENT',
+                'event_type' => $eventType,
+                'captured_at' => now(),
+            ]);
+        }
 
         if ($isEmergency && $sirineMode !== 'OFF') {
             SirineLog::log('ON', 'AUTO', null, $riwayat->id, $validated['device_id'], "Auto triggered by {$eventType}");
@@ -241,11 +299,24 @@ class RiwayatController extends Controller
             'floor' => 'required|integer|min:1|max:100',
             'value' => 'nullable|string|max:255',
             'image_url' => 'nullable|url|max:500',
+            'image' => 'nullable|max:5120',
             'flame_value' => 'nullable|numeric',
             'mq2_value' => 'nullable|numeric',
         ]);
 
         $sirineMode = Setting::getSirineMode();
+        
+        // Handle image upload
+        $imageUrl = $validated['image_url'] ?? null;
+        $imagePath = null;
+        
+        $imageFile = $request->file('image');
+        if ($imageFile) {
+            $filename = 'esp32_' . date('Ymd_His') . '_' . uniqid() . '.' . ($imageFile->getClientOriginalExtension() ?: 'jpg');
+            $path = $imageFile->storeAs('kamera', $filename, 'public');
+            $imageUrl = Storage::url($path);
+            $imagePath = $path;
+        }
         
         $sensorData = json_encode([
             'flame_value' => $validated['flame_value'] ?? null,
@@ -257,11 +328,25 @@ class RiwayatController extends Controller
             'floor' => $validated['floor'],
             'event_type' => 'FIRE',
             'value' => $validated['value'] ?? $sensorData,
-            'image_url' => $validated['image_url'] ?? null,
+            'image_url' => $imageUrl,
             'notif_channel' => 'WEB, API',
             'sirine_status' => $sirineMode !== 'OFF' ? 'ON' : 'OFF',
             'timestamp' => now(),
         ]);
+
+        // Save to kamera table if there's an image
+        if ($imageUrl) {
+            Kamera::create([
+                'device_id' => $validated['device_id'],
+                'floor' => $validated['floor'],
+                'image_url' => $imageUrl,
+                'image_path' => $imagePath,
+                'riwayat_id' => $riwayat->id,
+                'type' => 'EVENT',
+                'event_type' => 'FIRE',
+                'captured_at' => now(),
+            ]);
+        }
 
         if ($sirineMode !== 'OFF') {
             SirineLog::log('ON', 'AUTO', null, $riwayat->id, $validated['device_id'], 'Auto triggered by FIRE sensor');
