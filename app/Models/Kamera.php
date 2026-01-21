@@ -17,6 +17,7 @@ class Kamera extends Model
         'image_path',
         'riwayat_id',
         'type',
+        'event_type',
         'captured_at',
     ];
 

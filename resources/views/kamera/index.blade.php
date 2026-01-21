@@ -56,19 +56,18 @@
         <div class="aspect-square relative cursor-pointer" 
              onclick="showImage('{{ $image->image_url }}', '{{ $image->device_id }}', '{{ $image->captured_at->format('d/m/Y H:i') }}', {{ $image->id }})">
             <img src="{{ $image->image_url }}" alt="Camera" class="w-full h-full object-cover">
-            @if($image->riwayat)
+            @php
+                $eventType = $image->event_type ?? ($image->riwayat->event_type ?? null);
+            @endphp
+            @if($eventType)
             <div class="absolute top-2 right-2">
-                @if($image->riwayat->event_type === 'FIRE')
+                @if($eventType === 'FIRE')
                 <span class="inline-flex items-center rounded-md bg-red-500 px-2 py-1 text-xs font-semibold text-white shadow">
                     FIRE
                 </span>
-                @elseif($image->riwayat->event_type === 'SMOKE')
+                @elseif($eventType === 'SMOKE')
                 <span class="inline-flex items-center rounded-md bg-yellow-500 px-2 py-1 text-xs font-semibold text-white shadow">
                     SMOKE
-                </span>
-                @else
-                <span class="inline-flex items-center rounded-md bg-gray-500 px-2 py-1 text-xs font-semibold text-white shadow">
-                    {{ $image->riwayat->event_type }}
                 </span>
                 @endif
             </div>

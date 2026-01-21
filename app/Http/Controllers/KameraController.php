@@ -77,6 +77,7 @@ class KameraController extends Controller
             'imageFile' => 'nullable|max:5120',
             'riwayat_id' => 'nullable|exists:riwayat,id',
             'type' => 'nullable|in:SCHEDULED,EVENT,MANUAL',
+            'event_type' => 'nullable|in:FIRE,SMOKE',
         ]);
 
         $imageUrl = $validated['image_url'] ?? null;
@@ -118,6 +119,7 @@ class KameraController extends Controller
             'image_path' => $imagePath,
             'riwayat_id' => $validated['riwayat_id'] ?? null,
             'type' => $validated['type'] ?? 'EVENT',
+            'event_type' => $validated['event_type'] ?? $request->header('X-Event-Type'),
             'captured_at' => now(),
         ]);
 
