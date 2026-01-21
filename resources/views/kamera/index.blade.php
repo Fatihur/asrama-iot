@@ -58,9 +58,19 @@
             <img src="{{ $image->image_url }}" alt="Camera" class="w-full h-full object-cover">
             @if($image->riwayat)
             <div class="absolute top-2 right-2">
-                <span class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                @if($image->riwayat->event_type === 'FIRE')
+                <span class="inline-flex items-center rounded-md bg-red-500 px-2 py-1 text-xs font-semibold text-white shadow">
+                    FIRE
+                </span>
+                @elseif($image->riwayat->event_type === 'SMOKE')
+                <span class="inline-flex items-center rounded-md bg-yellow-500 px-2 py-1 text-xs font-semibold text-white shadow">
+                    SMOKE
+                </span>
+                @else
+                <span class="inline-flex items-center rounded-md bg-gray-500 px-2 py-1 text-xs font-semibold text-white shadow">
                     {{ $image->riwayat->event_type }}
                 </span>
+                @endif
             </div>
             @endif
             <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
