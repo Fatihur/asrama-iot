@@ -25,7 +25,10 @@ class SirineController extends Controller
         $mode = $setting ? $setting->value : 'AUTO';
         
         return response($mode, 200)
-            ->header('Content-Type', 'text/plain');
+            ->header('Content-Type', 'text/plain')
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
     public function setStatus(Request $request)
