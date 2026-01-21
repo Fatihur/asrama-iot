@@ -4,38 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting;
 use App\Models\SirineLog;
-use App\Models\Riwayat;
 use Illuminate\Http\Request;
 
 class SirineController extends Controller
 {
-    /**
-     * Get actual sirine output state for ESP32
-     * Returns "ON" or "OFF" based on mode and active emergencies
-     */
-    public function getOutput()
-    {
-        $mode = Setting::getSirineMode();
-        
-        // Direct mode: return as-is
-        if ($mode === 'ON') {
-            return response('ON', 200)->header('Content-Type', 'text/plain');
-        }
-        
-        if ($mode === 'OFF') {
-            return response('OFF', 200)->header('Content-Type', 'text/plain');
-        }
-        
-        // AUTO mode: check for active emergencies
-        $hasActiveEmergency = Riwayat::emergency()
-            ->where('resolve_status', '!=', 'RESOLVED')
-            ->exists();
-        
-        $output = $hasActiveEmergency ? 'ON' : 'OFF';
-        
-        return response($output, 200)->header('Content-Type', 'text/plain');
-    }
-
     public function index()
     {
         $currentMode = Setting::getSirineMode();
