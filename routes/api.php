@@ -26,7 +26,9 @@ Route::post('/riwayat/{riwayat}/resolve', [RiwayatController::class, 'resolve'])
 // =====================
 // SIRINE CONTROL API
 // =====================
-// ESP32 cek status sirine
+// ESP32 cek output sirine (actual ON/OFF state based on mode + emergencies)
+Route::get('/sirine/output', [SirineController::class, 'getOutput']);
+// ESP32 cek mode sirine (ON/OFF/AUTO)
 Route::get('/sirine', [SirineController::class, 'getStatus']);
 // Set status sirine (dari web atau API)
 Route::post('/sirine', [SirineController::class, 'setStatus']);
