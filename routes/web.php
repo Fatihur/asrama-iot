@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
     // Kamera
     Route::get('/kamera', [KameraController::class, 'index'])->name('kamera.index');
     Route::get('/kamera/{kamera}', [KameraController::class, 'show'])->name('kamera.show');
+    Route::delete('/kamera/{kamera}', [KameraController::class, 'destroy'])->name('kamera.destroy');
 
     // Distribusi
     Route::get('/distribusi', [DistribusiController::class, 'index'])->name('distribusi.index');

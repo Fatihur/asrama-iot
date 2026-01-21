@@ -127,4 +127,16 @@ class KameraController extends Controller
             'data' => $kamera,
         ], 201);
     }
+
+    public function destroy(Kamera $kamera)
+    {
+        // Hapus file gambar dari storage jika ada
+        if ($kamera->image_path && Storage::disk('public')->exists($kamera->image_path)) {
+            Storage::disk('public')->delete($kamera->image_path);
+        }
+
+        $kamera->delete();
+
+        return redirect()->route('kamera.index')->with('success', 'Gambar berhasil dihapus');
+    }
 }
