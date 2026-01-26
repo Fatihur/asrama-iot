@@ -71,6 +71,7 @@ class RiwayatController extends Controller
             'dateTo' => $request->date_to,
             'eventType' => $request->event_type,
             'floor' => $request->floor,
+            'status' => $request->status,
         ]);
 
         return $pdf->download('laporan-riwayat-kejadian.pdf');

@@ -58,8 +58,9 @@
 
     <div class="meta">
         <strong>Filter:</strong><br>
-        Periode: {{ $dateFrom ? $dateFrom : 'Awal' }} s/d {{ $dateTo ? $dateTo : 'Sekarang' }}<br>
+        Periode: {{ $dateFrom ? \Carbon\Carbon::parse($dateFrom)->format('d/m/Y') : 'Awal' }} s/d {{ $dateTo ? \Carbon\Carbon::parse($dateTo)->format('d/m/Y') : 'Sekarang' }}<br>
         Jenis Kejadian: {{ $eventType ? $eventType : 'Semua' }}<br>
+        Status: {{ $status ? $status : 'Semua' }}<br>
         Lantai: {{ $floor ? $floor : 'Semua' }}
     </div>
 
