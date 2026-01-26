@@ -46,6 +46,9 @@
                 <button type="submit" class="flex-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
                     <i class="fas fa-search mr-1"></i> Filter
                 </button>
+                <button type="submit" formaction="{{ route('riwayat.export.pdf') }}" class="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-500" title="Export PDF">
+                    <i class="fas fa-file-pdf"></i>
+                </button>
                 <a href="{{ route('riwayat.index') }}" class="rounded-md bg-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300">
                     <i class="fas fa-times"></i>
                 </a>

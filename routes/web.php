@@ -12,6 +12,8 @@ use App\Http\Controllers\SirineController;
 // Auth Routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Public Routes (redirect to dashboard or login)
@@ -27,6 +29,7 @@ Route::middleware('auth')->group(function () {
 
     // Riwayat
     Route::get('/riwayat', [RiwayatController::class, 'index'])->name('riwayat.index');
+    Route::get('/riwayat/export/pdf', [RiwayatController::class, 'exportPdf'])->name('riwayat.export.pdf');
     Route::get('/riwayat/{riwayat}', [RiwayatController::class, 'show'])->name('riwayat.show');
 
     // Kontak

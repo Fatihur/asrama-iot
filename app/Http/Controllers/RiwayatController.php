@@ -11,6 +11,7 @@ use App\Models\Kamera;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class RiwayatController extends Controller
 {
@@ -40,6 +41,39 @@ class RiwayatController extends Controller
         $floors = Cache::remember('floors', 300, fn() => Riwayat::distinct()->pluck('floor')->sort());
 
         return view('riwayat.index', compact('riwayat', 'eventTypes', 'floors'));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $query = Riwayat::select('id', 'device_id', 'floor', 'event_type', 'value', 'sirine_status', 'ack_status', 'resolve_status', 'timestamp');
+
+        if ($request->filled('event_type')) {
+            $query->where('event_type', $request->event_type);
+        }
+        if ($request->filled('status')) {
+            $query->where('resolve_status', $request->status);
+        }
+        if ($request->filled('floor')) {
+            $query->where('floor', $request->floor);
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('timestamp', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('timestamp', '<=', $request->date_to);
+        }
+
+        $riwayat = $query->orderBy('timestamp', 'desc')->get();
+
+        $pdf = Pdf::loadView('riwayat.pdf', [
+            'riwayat' => $riwayat,
+            'dateFrom' => $request->date_from,
+            'dateTo' => $request->date_to,
+            'eventType' => $request->event_type,
+            'floor' => $request->floor,
+        ]);
+
+        return $pdf->download('laporan-riwayat-kejadian.pdf');
     }
 
     public function show(Riwayat $riwayat)

@@ -15,6 +15,33 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
+    public function showRegister()
+    {
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+        return view('auth.register');
+    }
+
+    public function register(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = \App\Models\User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+        ]);
+
+        Auth::login($user);
+
+        return redirect()->route('dashboard');
+    }
+
     public function login(Request $request)
     {
         $credentials = $request->validate([
